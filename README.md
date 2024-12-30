@@ -14,7 +14,7 @@ pip install -r requirements.txt
 ```
 
 ### Dataset
-Download to your disk/drive the datasets from the provided drive folder (see project report). Then, unzip them to some location.
+Download to your disk/drive the datasets from the provided [drive folder](https://drive.google.com/drive/folders/1BiK9sYyTslcxQQoS3vZGF02hRg6OQpR4). Then, unzip them to `data/`.
 
 At this point you should be able to run and edit the base code provided.
 
