@@ -75,7 +75,7 @@ def parse_arguments():
     parser.add_argument(
         "--save",
         type=str,
-        default=None,
+        default=os.path.dirname(os.path.abspath(__file__)) + "/out",
         help="Optionally save a _classifier_, e.g. a zero shot classifier or probe.",
     )
     parser.add_argument(
