@@ -3,4 +3,5 @@ checkpoints/*
 data/*
 __pycache__/
 .direnv
-data/*
+.idea
+.vscode
