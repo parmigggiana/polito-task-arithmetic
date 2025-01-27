@@ -70,7 +70,7 @@ def finetune(
             args=argparse.Namespace(batch_size=batch_size, num_workers=2),
         )
         # Initialize optimizer and loss function
-        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
+        optimizer = optim.SGD(lr=lr, weight_decay=wd)
         criterion = nn.CrossEntropyLoss()
         # base_model = ImageEncoder(args=args)
         # Training loop
