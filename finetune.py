@@ -18,6 +18,8 @@ base_model = ImageEncoder(args=args)
 pretrained_model_path = "./out/pretrained_base.pth"
 torch.save(base_model, "./out/pretrained_base.pth")
 
+EPOCHS = {"DTD": 76, "EuroSAT": 12, "GTSRB": 11, "MNIST": 5, "RESISC45": 15, "SVHN": 4}
+
 
 def finetune(
     data_location,
@@ -75,7 +77,7 @@ def finetune(
         # base_model = ImageEncoder(args=args)
         # Training loop
         model.train()
-        for epoch in range(10):  # Adjust the number of epochs as needed
+        for epoch in range(EPOCHS[dataset_name]):
             running_loss = 0.0
             progress_bar = tqdm(train_loader, desc=f"Epoch {epoch + 1}")
 
@@ -95,7 +97,7 @@ def finetune(
             print(f"Epoch {epoch + 1}, Loss: {running_loss / len(train_loader)}")
         save_path = os.path.join(save, f"finetuned_{dataset_name}.pt")
         torch.save(model, save_path)
-        torch.cuda.empty_cache()
+        # torch.cuda.empty_cache()
         task_vector = NonLinearTaskVector(
             pretrained_checkpoint=pretrained_model_path, finetuned_checkpoint=save_path
         )
@@ -105,26 +107,26 @@ def finetune(
 
         print(f"Model saved for {dataset_name} at {save_path}")
 
-    # Combine task vectors by adding them
-    combined_task_vector = None  # Assuming simple sum for task vectors
-    for task_vector in task_vectors:
-        print(type(task_vector))
-        if combined_task_vector is None:
-            combined_task_vector = task_vector
-            continue
-        combined_task_vector += task_vector
-    # Apply the combined task vector to the pre-trained model
-    task_vector_instance = NonLinearTaskVector(
-        vector=combined_task_vector.vector
-    )  # Assuming combined_task_vector is prepared
-    applied_model = task_vector_instance.apply_to(
-        pretrained_checkpoint=pretrained_model_path
-    )  # Apply the task vector to the model
+    # # Combine task vectors by adding them
+    # combined_task_vector = None  # Assuming simple sum for task vectors
+    # for task_vector in task_vectors:
+    #     print(type(task_vector))
+    #     if combined_task_vector is None:
+    #         combined_task_vector = task_vector
+    #         continue
+    #     combined_task_vector += task_vector
+    # # Apply the combined task vector to the pre-trained model
+    # task_vector_instance = NonLinearTaskVector(
+    #     vector=combined_task_vector.vector
+    # )  # Assuming combined_task_vector is prepared
+    # applied_model = task_vector_instance.apply_to(
+    #     pretrained_checkpoint=pretrained_model_path
+    # )  # Apply the task vector to the model
 
-    # Save the final model after task addition
-    save_path = os.path.join(save, "finetuned_multitask_model.pt")
-    torch.save(applied_model, save_path)
-    print(f"Final combined multi-task model saved to {save_path}")
+    # # Save the final model after task addition
+    # save_path = os.path.join(save, "finetuned_multitask_model.pt")
+    # torch.save(applied_model, save_path)
+    # print(f"Final combined multi-task model saved to {save_path}")
 
 
 def main():
