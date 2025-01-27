@@ -1,55 +1,74 @@
 import argparse
 import os
+
+import open_clip
 import torch
 from torch import nn, optim
+from torchvision import transforms
 from tqdm.auto import tqdm
-from torchvision import transforms 
+
 from datasets.common import get_dataloader, maybe_dictionarize
 from datasets.registry import get_dataset
-from task_vectors import NonLinearTaskVector
 from modeling import ImageEncoder
-import open_clip
+from task_vectors import NonLinearTaskVector
 
-args = argparse.Namespace(
-            model="ViT-B-32",
-            openclip_cachedir=None,
-            cache_dir=None
-        )
+args = argparse.Namespace(model="ViT-B-32", openclip_cachedir=None, cache_dir=None)
 
 base_model = ImageEncoder(args=args)
 pretrained_model_path = "./out/pretrained_base.pth"
 torch.save(base_model, "./out/pretrained_base.pth")
 
-def finetune(data_location, save, batch_size, lr, wd, model_name="ViT-B-32", openclip_cachedir=None, datasets=["MNISTVal", "EuroSAT"]):
+
+def finetune(
+    data_location,
+    save,
+    batch_size,
+    lr,
+    wd,
+    model_name="ViT-B-32",
+    openclip_cachedir=None,
+    datasets=["MNISTVal", "EuroSAT"],
+):
     print(f"Finetuning model with data from {data_location} and saving to {save}")
     print(f"Batch size: {batch_size}, Learning rate: {lr}, Weight decay: {wd}")
 
     # Define preprocessing transformations
-    preprocess = transforms.Compose([
-        transforms.Resize((224, 224)),          # Ensure consistent size
-        transforms.Grayscale(num_output_channels=3),  # Convert grayscale to RGB
-        transforms.ToTensor(),                 # Convert PIL.Image to tensor
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize
-    ])
+    preprocess = transforms.Compose(
+        [
+            transforms.Resize((224, 224)),  # Ensure consistent size
+            transforms.Grayscale(num_output_channels=3),  # Convert grayscale to RGB
+            transforms.ToTensor(),  # Convert PIL.Image to tensor
+            transforms.Normalize(
+                mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
+            ),  # Normalize
+        ]
+    )
 
     # Initialize task vectors container
     task_vectors = []
-    
+
     # Fine-tune the model on each dataset and save after each fine-tuning step
     for dataset_name in datasets:
         print(f"Fine-tuning on dataset: {dataset_name}")
         save_path = os.path.join(save, f"finetuned_{dataset_name}.pt")
         if os.path.exists(save_path):
-            task_vector = NonLinearTaskVector(pretrained_checkpoint=pretrained_model_path, finetuned_checkpoint=save_path)
+            task_vector = NonLinearTaskVector(
+                pretrained_checkpoint=pretrained_model_path,
+                finetuned_checkpoint=save_path,
+            )
             task_vectors.append(task_vector)
             continue
-        
+
         # Load pre-trained model (initial weights)
-        
+
         model = ImageEncoder(args=args).to("cuda")
         # Load dataset
         train_dataset = get_dataset(dataset_name, preprocess, location=data_location)
-        train_loader = get_dataloader(train_dataset, is_train=True, args=argparse.Namespace(batch_size=batch_size, num_workers=2))
+        train_loader = get_dataloader(
+            train_dataset,
+            is_train=True,
+            args=argparse.Namespace(batch_size=batch_size, num_workers=2),
+        )
         # Initialize optimizer and loss function
         optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
         criterion = nn.CrossEntropyLoss()
@@ -77,11 +96,13 @@ def finetune(data_location, save, batch_size, lr, wd, model_name="ViT-B-32", ope
         save_path = os.path.join(save, f"finetuned_{dataset_name}.pt")
         torch.save(model, save_path)
         torch.cuda.empty_cache()
-        task_vector = NonLinearTaskVector(pretrained_checkpoint=pretrained_model_path, finetuned_checkpoint=save_path)
+        task_vector = NonLinearTaskVector(
+            pretrained_checkpoint=pretrained_model_path, finetuned_checkpoint=save_path
+        )
         task_vectors.append(task_vector)  # Store the task vector
         torch.cuda.empty_cache()
         # Save the fine-tuned model after each task
-       
+
         print(f"Model saved for {dataset_name} at {save_path}")
 
     # Combine task vectors by adding them
@@ -93,8 +114,12 @@ def finetune(data_location, save, batch_size, lr, wd, model_name="ViT-B-32", ope
             continue
         combined_task_vector += task_vector
     # Apply the combined task vector to the pre-trained model
-    task_vector_instance = NonLinearTaskVector(vector=combined_task_vector.vector)  # Assuming combined_task_vector is prepared
-    applied_model = task_vector_instance.apply_to(pretrained_checkpoint=pretrained_model_path)  # Apply the task vector to the model
+    task_vector_instance = NonLinearTaskVector(
+        vector=combined_task_vector.vector
+    )  # Assuming combined_task_vector is prepared
+    applied_model = task_vector_instance.apply_to(
+        pretrained_checkpoint=pretrained_model_path
+    )  # Apply the task vector to the model
 
     # Save the final model after task addition
     save_path = os.path.join(save, "finetuned_multitask_model.pt")
@@ -120,7 +145,14 @@ def main():
 
     args = parser.parse_args()
 
-    finetune(args.data_location, args.save, args.batch_size, args.lr, args.wd, datasets = ["MNISTVal", "EuroSAT", "GTSRB", "RESISC45", "SVHN", "CIFAR10"])
+    finetune(
+        args.data_location,
+        args.save,
+        args.batch_size,
+        args.lr,
+        args.wd,
+        datasets=["MNISTVal", "EuroSAT", "GTSRB", "RESISC45", "SVHN", "CIFAR10"],
+    )
 
 
 if __name__ == "__main__":
