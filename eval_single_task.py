@@ -5,9 +5,10 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 import argparse
 import os
-from modeling import ImageEncoder 
+from modeling import ImageEncoder
 from datasets.common import get_dataloader
 from datasets.registry import get_dataset
+from args import parse_arguments
 
 def calculate_accuracy(outputs, labels):
     _, predicted = torch.max(outputs, 1)
@@ -38,7 +39,7 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
         transforms.ToTensor(),          # Convert to tensor
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize
     ])
-    
+
     # Get the dataset
     dataset = get_dataset(dataset_name, preprocess, location=data_location)
     test_loader = get_dataloader(dataset, is_train=False, args=argparse.Namespace(batch_size=batch_size, num_workers=2))
@@ -84,25 +85,8 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
 # Example usage
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Fine-tune a model for arithmetic tasks."
-    )
-    parser.add_argument(
-        "--data-location",
-        type=str,
-        required=True,
-        help="Path to the datasets (e.g., /path/to/datasets/)",
-    )
-    parser.add_argument(
-        "--save",
-        type=str,
-        required=True,
-        help="Path to save the model (e.g., /path/to/save/)",
-    )
-
-    args = parser.parse_args()
-
-    eval_single_task("./out/finetuned_EuroSAT.pt", "./data/", 32, "cuda", "EuroSAT") # TODO: to use args instead
+    args = parse_arguments()
+    eval(args.data_location, args.save)
 
 
 if __name__ == "__main__":
