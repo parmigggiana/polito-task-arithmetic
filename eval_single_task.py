@@ -16,7 +16,7 @@ def eval_single_task(args, dataset_name, model_path):
     # Set the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    encoder = ImageEncoder(args=args)  # Customize args as needed
+    encoder = ImageEncoder(args=args).to(device)  # Customize args as needed
     head = get_classification_head(args, dataset_name + "Val")
     model = ImageClassifier(encoder, head)  # Build full model
     if model_path is not None:
