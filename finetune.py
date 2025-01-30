@@ -1,7 +1,6 @@
 import argparse
 import os
 
-import open_clip
 import torch
 from torch import nn, optim
 from torchvision import transforms
@@ -22,14 +21,14 @@ EPOCHS = {"DTD": 76, "EuroSAT": 12, "GTSRB": 11, "MNIST": 5, "RESISC45": 15, "SV
 
 
 def finetune(
-    data_location,
-    save,
-    batch_size,
-    lr,
-    wd,
-    model_name="ViT-B-32",
-    openclip_cachedir=None,
-    datasets=["MNISTVal", "EuroSAT"],
+        data_location,
+        save,
+        batch_size,
+        lr,
+        wd,
+        model_name="ViT-B-32",
+        openclip_cachedir=None,
+        datasets=["MNISTVal", "EuroSAT"],
 ):
     print(f"Finetuning model with data from {data_location} and saving to {save}")
     print(f"Batch size: {batch_size}, Learning rate: {lr}, Weight decay: {wd}")

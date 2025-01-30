@@ -1,19 +1,20 @@
-import torch
-from torch.utils.data import DataLoader
-import torch.nn as nn
-from torchvision import datasets, transforms
-from tqdm import tqdm
 import argparse
-import os
-from modeling import ImageEncoder
+
+import torch
+from torchvision import transforms
+from tqdm import tqdm
+
+from args import parse_arguments
 from datasets.common import get_dataloader
 from datasets.registry import get_dataset
-from args import parse_arguments
+from modeling import ImageEncoder
+
 
 def calculate_accuracy(outputs, labels):
     _, predicted = torch.max(outputs, 1)
     correct = (predicted == labels).sum().item()
     return correct
+
 
 def eval_single_task(model_path, data_location, batch_size=32, device=None, dataset_name="MNIST"):
     """
@@ -36,7 +37,7 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
     preprocess = transforms.Compose([
         transforms.Resize((224, 224)),  # Resize to match the model input size
         transforms.Grayscale(num_output_channels=3),
-        transforms.ToTensor(),          # Convert to tensor
+        transforms.ToTensor(),  # Convert to tensor
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize
     ])
 
@@ -44,10 +45,10 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
     dataset = get_dataset(dataset_name, preprocess, location=data_location)
     test_loader = get_dataloader(dataset, is_train=False, args=argparse.Namespace(batch_size=batch_size, num_workers=2))
     args = argparse.Namespace(
-            model="ViT-B-32",
-            openclip_cachedir=None,
-            cache_dir=None
-        )
+        model="ViT-B-32",
+        openclip_cachedir=None,
+        cache_dir=None
+    )
 
     # Initialize the model
     model = ImageEncoder(args=args)  # Customize args as needed
@@ -82,6 +83,8 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
     # Final accuracy
     accuracy = 100 * correct / total
     print(f"Final accuracy on {dataset_name} dataset: {accuracy:.2f}%")
+
+
 # Example usage
 
 def main():
