@@ -64,7 +64,9 @@ def finetune(
 
         model = ImageEncoder(args=args).to("cuda")
         # Load dataset
-        train_dataset = get_dataset(dataset_name, preprocess, location=data_location)
+        train_dataset = get_dataset(
+            dataset_name + "Val", preprocess, location=data_location
+        )
         train_loader = get_dataloader(
             train_dataset,
             is_train=True,
@@ -152,7 +154,7 @@ def main():
         args.batch_size,
         args.lr,
         args.wd,
-        datasets=["MNISTVal", "EuroSAT", "GTSRB", "RESISC45", "SVHN", "CIFAR10"],
+        datasets=["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"],
     )
 
 
