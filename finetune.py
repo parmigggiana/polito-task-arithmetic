@@ -42,7 +42,6 @@ def finetune(args, datasets):
         print(f"Fine-tuning on dataset: {dataset_name}")
         head = get_classification_head(args, dataset_name + "Val")
         model = ImageClassifier(encoder, head)  # Build full model
-        # model.to("cuda")
         model.freeze_head()  # Freeze the classification head
 
         dataset = get_dataset(
