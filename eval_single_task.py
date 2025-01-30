@@ -1,20 +1,25 @@
-import torch
-from torch.utils.data import DataLoader
-import torch.nn as nn
-from torchvision import datasets, transforms
-from tqdm import tqdm
 import argparse
 import os
-from modeling import ImageEncoder 
+
+import torch
+from torchvision import transforms
+from tqdm import tqdm
+
+from args import parse_arguments
 from datasets.common import get_dataloader
 from datasets.registry import get_dataset
+from modeling import ImageEncoder
+
 
 def calculate_accuracy(outputs, labels):
     _, predicted = torch.max(outputs, 1)
     correct = (predicted == labels).sum().item()
     return correct
 
-def eval_single_task(model_path, data_location, batch_size=32, device=None, dataset_name="MNIST"):
+
+def eval_single_task(
+    model_path, data_location, batch_size=32, device=None, dataset_name="MNIST"
+):
     """
     Evaluates a fine-tuned model on a single dataset.
 
@@ -29,28 +34,36 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
     - None
     """
     # Set the device
-    device = torch.device(device if device else ("cuda" if torch.cuda.is_available() else "cpu"))
+    device = torch.device(
+        device if device else ("cuda" if torch.cuda.is_available() else "cpu")
+    )
 
     # Load the dataset
-    preprocess = transforms.Compose([
-        transforms.Resize((224, 224)),  # Resize to match the model input size
-        transforms.Grayscale(num_output_channels=3),
-        transforms.ToTensor(),          # Convert to tensor
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize
-    ])
-    
+    preprocess = transforms.Compose(
+        [
+            transforms.Resize((224, 224)),  # Resize to match the model input size
+            transforms.Grayscale(num_output_channels=3),
+            transforms.ToTensor(),  # Convert to tensor
+            transforms.Normalize(
+                mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
+            ),  # Normalize
+        ]
+    )
+
     # Get the dataset
     dataset = get_dataset(dataset_name, preprocess, location=data_location)
-    test_loader = get_dataloader(dataset, is_train=False, args=argparse.Namespace(batch_size=batch_size, num_workers=2))
-    args = argparse.Namespace(
-            model="ViT-B-32",
-            openclip_cachedir=None,
-            cache_dir=None
-        )
+    test_loader = get_dataloader(
+        dataset,
+        is_train=False,
+        args=argparse.Namespace(batch_size=batch_size, num_workers=2),
+    )
+    args = argparse.Namespace(model="ViT-B-32", openclip_cachedir=None, cache_dir=None)
 
     # Initialize the model
     model = ImageEncoder(args=args)  # Customize args as needed
-    model.load_state_dict(torch.load(model_path).state_dict())  # Load the fine-tuned model
+    model.load_state_dict(
+        torch.load(model_path, map_location=device).state_dict()
+    )  # Load the fine-tuned model
     model.to(device)  # Move the model to the correct device
     model.eval()  # Set the model to evaluation mode
 
@@ -60,7 +73,7 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
 
     # Start evaluation loop
     with torch.no_grad():
-        progress_bar = tqdm(test_loader, desc="Evaluating")
+        progress_bar = tqdm(test_loader, desc=f"Evaluating {dataset_name}")
         for images, labels in progress_bar:
             images, labels = images.to(device), labels.to(device)
 
@@ -81,28 +94,31 @@ def eval_single_task(model_path, data_location, batch_size=32, device=None, data
     # Final accuracy
     accuracy = 100 * correct / total
     print(f"Final accuracy on {dataset_name} dataset: {accuracy:.2f}%")
-# Example usage
+
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Fine-tune a model for arithmetic tasks."
-    )
-    parser.add_argument(
-        "--data-location",
-        type=str,
-        required=True,
-        help="Path to the datasets (e.g., /path/to/datasets/)",
-    )
-    parser.add_argument(
-        "--save",
-        type=str,
-        required=True,
-        help="Path to save the model (e.g., /path/to/save/)",
-    )
-
-    args = parser.parse_args()
-
-    eval_single_task("./out/finetuned_EuroSAT.pt", "./data/", 32, "cuda", "EuroSAT") # TODO: to use args instead
+    datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
+    args = parse_arguments()
+    print()
+    print("Evaluating pretrained model")
+    for dataset in datasets:
+        eval_single_task(
+            os.path.join(args.save, "pretrained_base.pth"),
+            args.data_location,
+            batch_size=args.batch_size,
+            device=args.device,
+            dataset_name="MNIST",
+        )
+    print()
+    print("Evaluating fine-tuned models")
+    for dataset in datasets:
+        eval_single_task(
+            os.path.join(args.save, f"finetuned_{dataset}.pt"),
+            args.data_location,
+            batch_size=args.batch_size,
+            device=args.device,
+            dataset_name=dataset,
+        )
 
 
 if __name__ == "__main__":
