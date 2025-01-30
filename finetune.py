@@ -33,7 +33,7 @@ def finetune(args, datasets):
     #         ),  # Normalize
     #     ]
     # )
-    encoder = ImageEncoder(args)
+    encoder = ImageEncoder(args).to("cuda")
     # Fine-tune the model on each dataset and save after each fine-tuning step
     for dataset_name in datasets:
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
@@ -42,6 +42,7 @@ def finetune(args, datasets):
         print(f"Fine-tuning on dataset: {dataset_name}")
         head = get_classification_head(args, dataset_name + "Val")
         model = ImageClassifier(encoder, head)  # Build full model
+        # model.to("cuda")
         model.freeze_head()  # Freeze the classification head
 
         dataset = get_dataset(
