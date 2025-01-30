@@ -64,7 +64,7 @@ def finetune(args, datasets):
 
             for batch in progress_bar:
                 data = maybe_dictionarize(batch)
-                images, labels = data["images"], data["labels"]
+                images, labels = data["images"].to("cuda"), data["labels"].to("cuda")
 
                 optimizer.zero_grad()  # Reset gradients
                 outputs = model(images)  # Forward pass
