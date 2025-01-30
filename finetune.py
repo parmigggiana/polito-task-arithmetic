@@ -2,7 +2,6 @@ import os
 
 import torch
 from torch import nn, optim
-from torchvision import transforms
 from tqdm.auto import tqdm
 
 from args import parse_arguments
@@ -41,7 +40,9 @@ def finetune(args, datasets):
             continue
         print(f"Fine-tuning on dataset: {dataset_name}")
         head = get_classification_head(args, dataset_name + "Val")
-        model = ImageClassifier(encoder, head)  # Build full model
+        model = ImageClassifier(encoder, head).to(
+            "cuda"
+        )  # Build full model and move to GPU
         model.freeze_head()  # Freeze the classification head
 
         dataset = get_dataset(

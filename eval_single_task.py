@@ -18,7 +18,7 @@ def eval_single_task(args, dataset_name, model_path):
 
     encoder = ImageEncoder(args=args).to(device)  # Customize args as needed
     head = get_classification_head(args, dataset_name + "Val")
-    model = ImageClassifier(encoder, head)  # Build full model
+    model = ImageClassifier(encoder, head).to(device)  # Build full model
     if model_path is not None:
         model.load_state_dict(
             torch.load(model_path, map_location=device)
