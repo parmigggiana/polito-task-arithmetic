@@ -16,5 +16,3 @@ python eval_single_task.py \
 python eval_task_addition.py \
 --data-location=./data/ \
 --save=./out/
-
-exec bash
