@@ -10,7 +10,7 @@ from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
 from utils import torch_load, train_diag_fim_logtr
 
-samples_nr = 2000  # How many per-example gradients to accumulate
+samples_nr = 500  # How many per-example gradients to accumulate
 
 
 def eval(dataset_name, loader, model):
@@ -47,11 +47,13 @@ def eval(dataset_name, loader, model):
 
 
 def eval_single_task(args, dataset_name, model_path):
-    encoder = ImageEncoder(args=args).to(args.device)  # Customize args as needed
-    head = get_classification_head(args, dataset_name + "Val")
-    model = ImageClassifier(encoder, head).to(args.device)  # Build full model
     if model_path is not None:
-        model.load_state_dict(torch_load(model_path))  # Load the model
+        model = torch_load(model_path, args.device)
+    else:
+        encoder = ImageEncoder(args=args).to(args.device)
+        head = get_classification_head(args, dataset_name + "Val")
+        model = ImageClassifier(encoder, head).to(args.device)
+
     model.eval()  # Set the model to evaluation mode
 
     # Validation
