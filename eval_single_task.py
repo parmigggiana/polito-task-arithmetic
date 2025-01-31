@@ -1,3 +1,4 @@
+import json
 import os
 
 import torch
@@ -70,6 +71,12 @@ def eval_single_task(args, dataset_name, model_path):
     )
     accuracy, logdet_hF = eval(dataset_name, loader, model)
     print(f"Validation Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
+    # Save validation results to JSON
+    val_results = {
+        "dataset": "Validation",
+        "accuracy": accuracy,
+        "logdet_hF": logdet_hF,
+    }
 
     # Test
     dataset = get_dataset(
@@ -85,6 +92,19 @@ def eval_single_task(args, dataset_name, model_path):
     )
     accuracy, logdet_hF = eval(dataset_name, loader, model)
     print(f"Test Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
+    test_results = {
+        "dataset": "Test",
+        "accuracy": accuracy,
+        "logdet_hF": logdet_hF,
+    }
+
+    results_path = os.path.join(
+        args.save,
+        f"{dataset_name}_{'finetuned' if model_path else 'base'}_results.json",
+    )
+
+    with open(results_path, "w") as f:
+        json.dump(test_results, f)
 
 
 if __name__ == "__main__":
