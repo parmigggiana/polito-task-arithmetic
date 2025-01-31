@@ -1,33 +1,18 @@
 import argparse
 
+from args import parse_arguments
 
-def eval(data_location, save):
+
+def eval(args):
     print(
-        f"Evaluating task addition model with data from {data_location} and saving to {save}"
+        f"Evaluating task addition model with data from {args.data_location} and saving to {args.save}"
     )
     print()
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Fine-tune a model for arithmetic tasks."
-    )
-    parser.add_argument(
-        "--data-location",
-        type=str,
-        required=True,
-        help="Path to the datasets (e.g., /path/to/datasets/)",
-    )
-    parser.add_argument(
-        "--save",
-        type=str,
-        required=True,
-        help="Path to save the model (e.g., /path/to/save/)",
-    )
-
-    args = parser.parse_args()
-
-    eval(args.data_location, args.save)
+    args = parse_arguments()
+    eval(args)
 
 
 if __name__ == "__main__":
