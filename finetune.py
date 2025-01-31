@@ -9,6 +9,7 @@ from datasets.common import get_dataloader, maybe_dictionarize
 from datasets.registry import get_dataset
 from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
+from utils import torch_save
 
 EPOCHS = {"DTD": 76, "EuroSAT": 12, "GTSRB": 11, "MNIST": 5, "RESISC45": 15, "SVHN": 4}
 
@@ -78,8 +79,9 @@ def finetune(args, datasets):
 
             print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
 
+        # TODO: save task vector instead of full model
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
-        torch.save(model, save_path)
+        torch_save(model, save_path)
         torch.cuda.empty_cache()
         # Save the fine-tuned model after each task
 
