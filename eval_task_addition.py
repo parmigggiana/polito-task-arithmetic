@@ -60,7 +60,6 @@ def eval_task_addition(args):
     """
     pretrained_model_path=os.path.join(args.save, 'base.pt')
     data_location=args.data_location
-    datasets=args.ḋatasets
     save=args.save
 
     print(
