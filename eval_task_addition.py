@@ -58,7 +58,7 @@ def eval_task_addition(args):
     """
     Evaluates a model with applied task vectors across multiple datasets.
     """
-    pretrained_model_path=os.path.join(args.save, 'base.pt')
+
     data_location=args.data_location
     save=args.save
 
@@ -70,7 +70,7 @@ def eval_task_addition(args):
 
     for dataset_name in datasets:
         print(f"Creating task vector for {dataset_name}...")
-
+        pretrained_model_path=os.path.join(args.save, f'base_{dataset_name}.pt')
         finetuned_model_path = f"./out/finetuned_{dataset_name}.pt"
         task_vector = NonLinearTaskVector(pretrained_checkpoint=pretrained_model_path,
                                           finetuned_checkpoint=finetuned_model_path)
