@@ -36,7 +36,7 @@ def finetune(args, datasets):
     ckpt_path = os.path.join(args.save, "base.pt")
     if os.path.exists(ckpt_path):
         print(f"Loading checkpoint from {ckpt_path}")
-        encoder = torch.load(ckpt_path)
+        encoder = torch.load(ckpt_path, weights_only=False)
     else:
         print(f"Checkpoint not found at {ckpt_path}, using a new encoder.")
         encoder = ImageEncoder(args).to("cuda")
