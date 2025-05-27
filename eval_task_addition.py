@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import torch
 from torchvision import transforms
@@ -57,7 +58,7 @@ def eval_task_addition(args):
     """
     Evaluates a model with applied task vectors across multiple datasets.
     """
-    pretrained_model_path=args.pretrained_model_path
+    pretrained_model_path=os.path.join(args.save, 'base.pt')
     data_location=args.data_location
     datasets=args.ḋatasets
     save=args.save

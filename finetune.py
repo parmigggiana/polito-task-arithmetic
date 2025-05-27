@@ -33,7 +33,15 @@ def finetune(args, datasets):
     #         ),  # Normalize
     #     ]
     # )
-    encoder = ImageEncoder(args).to("cuda")
+    ckpt_path = os.path.join(args.save, "base.pt")
+    if os.path.exists(ckpt_path):
+        print(f"Loading checkpoint from {ckpt_path}")
+        encoder = torch.load(ckpt_path)
+    else:
+        print(f"Checkpoint not found at {ckpt_path}, using a new encoder.")
+        encoder = ImageEncoder(args).to("cuda")
+        torch.save(encoder, ckpt_path)
+
     # Fine-tune the model on each dataset and save after each fine-tuning step
     for dataset_name in datasets:
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
