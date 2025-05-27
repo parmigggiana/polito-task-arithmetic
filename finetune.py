@@ -33,27 +33,23 @@ def finetune(args, datasets):
     #         ),  # Normalize
     #     ]
     # )
-    ckpt_path = os.path.join(args.save, "base.pt")
-    if os.path.exists(ckpt_path):
-        print(f"Loading checkpoint from {ckpt_path}")
-        encoder = torch.load(ckpt_path, weights_only=False)
-    else:
-        print(f"Checkpoint not found at {ckpt_path}, using a new encoder.")
-        encoder = ImageEncoder(args).to("cuda")
-        torch.save(encoder, ckpt_path)
+    encoder = ImageEncoder(args).to("cuda")
 
     # Fine-tune the model on each dataset and save after each fine-tuning step
     for dataset_name in datasets:
+        ckpt_path = os.path.join(args.save, f"base_{dataset_name}.pt")
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
         if os.path.exists(save_path):
             continue
         print(f"Fine-tuning on dataset: {dataset_name}")
+
         head = get_classification_head(args, dataset_name + "Val")
         model = ImageClassifier(encoder, head).to(
             "cuda"
         )  # Build full model and move to GPU
-        model.freeze_head()  # Freeze the classification head
+        torch.save(model.state_dict(), ckpt_path)  # Save the base model
 
+        model.freeze_head()  # Freeze the classification head
         dataset = get_dataset(
             dataset_name + "Val",
             preprocess=model.train_preprocess,
@@ -87,9 +83,8 @@ def finetune(args, datasets):
 
             print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
 
-        # TODO: save task vector instead of full model
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
-        torch_save(model, save_path)
+        torch_save(model.state_dict(), save_path)
         torch.cuda.empty_cache()
         # Save the fine-tuned model after each task
 

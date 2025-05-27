@@ -48,12 +48,14 @@ def eval(dataset_name, loader, model):
 
 
 def eval_single_task(args, dataset_name, model_path):
+    encoder = ImageEncoder(args=args).to(args.device)
+    head = get_classification_head(args, dataset_name + "Val")
+    model = ImageClassifier(encoder, head).to(args.device)
+
     if model_path is not None:
-        model = torch_load(model_path, args.device)
-    else:
-        encoder = ImageEncoder(args=args).to(args.device)
-        head = get_classification_head(args, dataset_name + "Val")
-        model = ImageClassifier(encoder, head).to(args.device)
+        print(f"Loading model from {model_path}")
+        state_dict = torch_load(model_path, map_location=args.device)
+        model.load_state_dict(state_dict)
 
     model.eval()  # Set the model to evaluation mode
 

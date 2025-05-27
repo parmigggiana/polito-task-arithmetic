@@ -46,7 +46,7 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
 
 
 
-def find_alha(args, task_vectors, pretrained_model_path):
+def find_alpha(args, task_vectors, pretrained_model_path):
     accs = []
     for alpha_candidate in range(0.0, 1.01, step=0.05):
         acc = average_normalized_accuracy(args, task_vectors, pretrained_model_path,alpha_candidate)
@@ -77,7 +77,7 @@ def eval_task_addition(args):
 
         task_vectors.append(task_vector)  # Store the task vector
 
-    alpha = find_alha(args, task_vectors=task_vectors, pretrained_model_path=pretrained_model_path)
+    alpha = find_alpha(args, task_vectors=task_vectors, pretrained_model_path=pretrained_model_path)
     print(f"Optimal alpha found: {alpha}")
 
     merged_model = sum(task_vectors).apply_to(pretrained_model_path, scaling_coef=alpha)

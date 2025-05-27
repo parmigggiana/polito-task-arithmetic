@@ -10,10 +10,10 @@ python finetune.py \
 --lr=1e-4 \
 --wd=0.0
 
-# python eval_single_task.py \
-# --data-location=./data/ \
-# --save=./out/ \
-# --cache-dir=./cache/ \
+python eval_single_task.py \
+--data-location=./data/ \
+--save=./out/ \
+--cache-dir=./cache/ \
 
 python eval_task_addition.py \
 --data-location=./data/ \
