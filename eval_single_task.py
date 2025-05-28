@@ -54,7 +54,7 @@ def eval_single_task(args, dataset_name, model_path):
 
     if model_path is not None:
         print(f"Loading model from {model_path}")
-        state_dict = torch_load(model_path, map_location=args.device).state_dict()
+        state_dict = torch_load(model_path, device=args.device).state_dict()
         model.load_state_dict(state_dict)
 
     model.eval()  # Set the model to evaluation mode

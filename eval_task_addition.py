@@ -48,7 +48,7 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
 
 def find_alpha(args, task_vectors, pretrained_model_path):
     accs = []
-    for alpha_candidate in range(0.0, 1.01, step=0.05):
+    for alpha_candidate in range(0.0, 1.01, 0.05):
         acc = average_normalized_accuracy(args, task_vectors, pretrained_model_path,alpha_candidate)
         accs.append(acc)
 
