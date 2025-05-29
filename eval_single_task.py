@@ -10,7 +10,7 @@ from datasets.registry import get_dataset
 from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
 from utils import torch_load
-
+samples_nr = 500 
 def eval(args, dataset_name, loader, model):
     # Initialize variables for evaluation
     correct = 0
@@ -39,8 +39,9 @@ def eval(args, dataset_name, loader, model):
 
     # Final accuracy
     accuracy = 100 * correct / total
+    logdet_hF = train_diag_fim_logtr(args, model, dataset_name, samples_nr)
 
-    return accuracy
+    return accuracy, logdet_hF
 
 
 def eval_single_task(args, dataset_name, model_path):
