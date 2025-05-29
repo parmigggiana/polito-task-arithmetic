@@ -57,9 +57,12 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
 
 def find_alpha(args, task_vectors, pretrained_model_path):
     accs = []
+    print("Finding optimal alpha...")
     for alpha_candidate in np.arange(0.0, 1.01, 0.05):
         acc = average_normalized_accuracy(args, task_vectors, pretrained_model_path,alpha_candidate)
+        print(f"Alpha: {alpha_candidate:.2f}, Average Normalized Accuracy: {acc:.4f}")
         accs.append(acc)
+
 
     return accs.index(max(accs)) * 0.05  # Return the alpha that gives the best accuracy
 
