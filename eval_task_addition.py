@@ -12,6 +12,7 @@ from datasets.registry import get_dataset
 from task_vectors import NonLinearTaskVector
 
 from args import parse_arguments
+from eval_single_task import eval
 
 import numpy as np
 
