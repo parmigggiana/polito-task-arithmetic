@@ -114,7 +114,7 @@ def eval_single_task(args, dataset_name, model_path):
 if __name__ == "__main__":
     datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
     args = parse_arguments()
-    if os.exists(os.path.join(args.save, "results.json")):
+    if os.path.exists(os.path.join(args.save, "results.json")):
         print("Results already exist. Skipping evaluation.")
         exit(0)
     print()
