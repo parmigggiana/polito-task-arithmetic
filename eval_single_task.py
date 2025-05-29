@@ -48,6 +48,13 @@ def eval(dataset_name, loader, model):
 
 
 def eval_single_task(args, dataset_name, model_path):
+    results_path = os.path.join(
+        args.save,
+        f"{dataset_name}_{'finetuned' if model_path else 'base'}_results.json",
+    )
+    if os.path.exists(results_path):
+        print(f"Results already exist at {results_path}. Skipping evaluation.")
+        return
     encoder = ImageEncoder(args=args).to(args.device)
     head = get_classification_head(args, dataset_name + "Val")
     model = ImageClassifier(encoder, head).to(args.device)
@@ -100,11 +107,6 @@ def eval_single_task(args, dataset_name, model_path):
         "logdet_hF": logdet_hF,
     }
 
-    results_path = os.path.join(
-        args.save,
-        f"{dataset_name}_{'finetuned' if model_path else 'base'}_results.json",
-    )
-
     with open(results_path, "w") as f:
         json.dump(test_results, f)
 
@@ -112,6 +114,9 @@ def eval_single_task(args, dataset_name, model_path):
 if __name__ == "__main__":
     datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
     args = parse_arguments()
+    if os.exists(os.path.join(args.save, "results.json")):
+        print("Results already exist. Skipping evaluation.")
+        exit(0)
     print()
     print("Evaluating pretrained model")
     for dataset in datasets:
