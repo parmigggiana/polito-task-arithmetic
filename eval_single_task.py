@@ -9,10 +9,7 @@ from datasets.common import get_dataloader
 from datasets.registry import get_dataset
 from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
-from utils import torch_load, train_diag_fim_logtr
-
-samples_nr = 500  # How many per-example gradients to accumulate
-
+from utils import torch_load
 
 def eval(args, dataset_name, loader, model):
     # Initialize variables for evaluation
@@ -42,9 +39,8 @@ def eval(args, dataset_name, loader, model):
 
     # Final accuracy
     accuracy = 100 * correct / total
-    logdet_hF = train_diag_fim_logtr(args, model, dataset_name, samples_nr)
 
-    return accuracy, logdet_hF
+    return accuracy
 
 
 def eval_single_task(args, dataset_name, model_path):
@@ -75,14 +71,12 @@ def eval_single_task(args, dataset_name, model_path):
     )
     loader = get_dataloader(
         dataset,
-        is_train=False,
+        is_train=True,
         args=args,
     )
     accuracy, logdet_hF = eval(args, dataset_name, loader, model)
     print(f"Validation Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
-    # Save validation results to JSON
-    val_results = {
-        "dataset": "Validation",
+    train_results = {
         "accuracy": accuracy,
         "logdet_hF": logdet_hF,
     }
@@ -102,19 +96,17 @@ def eval_single_task(args, dataset_name, model_path):
     accuracy, logdet_hF = eval(args, dataset_name, loader, model)
     print(f"Test Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
     test_results = {
-        "dataset": "Test",
         "accuracy": accuracy,
         "logdet_hF": logdet_hF,
     }
 
-    with open(results_path, "w") as f:
-        json.dump(test_results, f)
+    return train_results, test_results
 
 
 if __name__ == "__main__":
     datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
     args = parse_arguments()
-    if os.path.exists(os.path.join(args.save, "results.json")):
+    if os.path.exists(os.path.join(args.save, "before_scaling_results.json")):
         print("Results already exist. Skipping evaluation.")
         exit(0)
     print()
@@ -123,9 +115,18 @@ if __name__ == "__main__":
         eval_single_task(args=args, dataset_name=dataset, model_path=None)
     print()
     print("Evaluating fine-tuned models")
+    results = {}
     for dataset in datasets:
-        eval_single_task(
+        train_results, test_results = eval_single_task(
             args=args,
             dataset_name=dataset,
             model_path=os.path.join(args.save, f"finetuned_{dataset}.pt"),
         )
+        results[dataset] = {
+            "train": train_results,
+            "test": test_results,
+        }
+
+    with open(os.path.join(args.save, "before_scaling_results.json"), "w") as f:
+        json.dump(results, f, indent=4)
+

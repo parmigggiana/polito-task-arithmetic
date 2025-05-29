@@ -1,3 +1,4 @@
+import json
 import os
 
 import torch
@@ -9,9 +10,70 @@ from datasets.common import get_dataloader, maybe_dictionarize
 from datasets.registry import get_dataset
 from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
-from utils import torch_save
+from utils import train_diag_fim_logtr
 
 EPOCHS = {"DTD": 76, "EuroSAT": 12, "GTSRB": 11, "MNIST": 5, "RESISC45": 15, "SVHN": 4}
+
+samples_nr = 200
+
+def eval(args, loader, dataset_name, model):
+    # Initialize variables for evaluation
+    correct = 0
+    total = 0
+
+    # Start evaluation loop
+    print()
+    with torch.no_grad():
+        # progress_bar = tqdm(loader, desc=f"Evaluating {dataset_name}")
+        for images, labels in loader:
+            images, labels = images.to(args.device), labels.to(args.device)
+
+            # Forward pass
+            outputs = model(images)
+
+            # Get predictions
+            _, predicted = torch.max(outputs, 1)
+
+            # Update the count of correct predictions
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+            # Optionally update the progress bar with accuracy
+            accuracy = 100 * correct / total
+            # progress_bar.set_postfix({"accuracy": accuracy})
+
+    # Final accuracy
+    accuracy = 100 * correct / total
+    logdet_hF = train_diag_fim_logtr(args, model, dataset_name, samples_nr)
+
+    return accuracy, logdet_hF
+
+def eval_acc(args, loader, model):
+    # Initialize variables for evaluation
+    correct = 0
+    total = 0
+
+    # Start evaluation loop
+    print()
+    with torch.no_grad():
+        for images, labels in loader:
+            images, labels = images.to(args.device), labels.to(args.device)
+
+            # Forward pass
+            outputs = model(images)
+
+            # Get predictions
+            _, predicted = torch.max(outputs, 1)
+
+            # Update the count of correct predictions
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+
+    # Final accuracy
+    accuracy = 100 * correct / total
+
+    return accuracy
 
 
 def finetune(args, datasets):
@@ -38,6 +100,7 @@ def finetune(args, datasets):
     ckpt_path = os.path.join(args.save, f"base.pt")
     encoder.save(ckpt_path)  # Save the base model
     # Fine-tune the model on each dataset and save after each fine-tuning step
+    training_results = {}
     for dataset_name in datasets:
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
         if os.path.exists(save_path):
@@ -63,6 +126,13 @@ def finetune(args, datasets):
         criterion = nn.CrossEntropyLoss()
         # base_model = ImageEncoder(args=args)
         # Training loop
+
+        pre_acc, pre_logdet = eval(args, loader, dataset_name, model)
+        training_results[dataset_name] = {
+            "accuracy": pre_acc,
+            "logdet_hF": pre_logdet,
+        }
+
         model.train()
         for epoch in range(EPOCHS[dataset_name]):
             running_loss = 0.0
@@ -84,12 +154,15 @@ def finetune(args, datasets):
             print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
 
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
+
         model.image_encoder.save(save_path)
         # torch_save(model, save_path)
         torch.cuda.empty_cache()
         # Save the fine-tuned model after each task
 
         print(f"Model saved for {dataset_name} at {save_path}")
+    with open(os.path.join(args.save, "pre_trained_results.json"), "w") as f:
+        json.dump(training_results[dataset_name], f, indent=4)
 
 
 if __name__ == "__main__":

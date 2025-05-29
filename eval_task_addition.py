@@ -1,23 +1,24 @@
-import argparse
 import os
 
 from heads import get_classification_head
 from modeling import ImageClassifier
 import torch
-from torchvision import transforms
-from tqdm import tqdm
 
 from datasets.common import get_dataloader
 from datasets.registry import get_dataset
 from task_vectors import NonLinearTaskVector
 
 from args import parse_arguments
-
+from eval_single_task import eval
 import numpy as np
+import json
+
+ALPHA = 0.05
 
 datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
 
-def eval_acc(args, dataset_name, loader, model):
+
+def eval_acc(args, loader, model):
     # Initialize variables for evaluation
     correct = 0
     total = 0
@@ -25,8 +26,7 @@ def eval_acc(args, dataset_name, loader, model):
     # Start evaluation loop
     print()
     with torch.no_grad():
-        progress_bar = tqdm(loader, desc=f"Evaluating {dataset_name}")
-        for images, labels in progress_bar:
+        for images, labels in loader:
             images, labels = images.to(args.device), labels.to(args.device)
 
             # Forward pass
@@ -38,10 +38,6 @@ def eval_acc(args, dataset_name, loader, model):
             # Update the count of correct predictions
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-
-            # Optionally update the progress bar with accuracy
-            accuracy = 100 * correct / total
-            progress_bar.set_postfix({"accuracy": accuracy})
 
     # Final accuracy
     accuracy = 100 * correct / total
@@ -77,8 +73,8 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             args=args,
         )
 
-        accuracy_c = eval_acc(args, dataset_name, loader, model_cumulative)
-        accuracy_m = eval_acc(args, dataset_name, loader, model_single_task)
+        accuracy_c = eval_acc(args, loader, model_cumulative)
+        accuracy_m = eval_acc(args, loader, model_single_task)
 
         acc += accuracy_c / accuracy_m
 
@@ -120,13 +116,19 @@ def eval_task_addition(args):
 
         task_vectors.append(task_vector)  # Store the task vector
 
-    alpha = find_alpha(args, task_vectors=task_vectors, pretrained_model_path=pretrained_model_path)
-    print(f"Optimal alpha found: {alpha}")
+    if ALPHA is None:
+        alpha = find_alpha(args, task_vectors=task_vectors, pretrained_model_path=pretrained_model_path)
+        print(f"Optimal alpha found: {alpha}")
+    else:
+        alpha = ALPHA
 
     merged_model = sum(task_vectors).apply_to(pretrained_model_path, scaling_coef=alpha)
 
-    results = []
+    merged_results = []
+    scaled_results = []
     for dataset_name in datasets:
+        scaled_model = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
+
         dataset = get_dataset(
                 dataset_name,
                 preprocess=merged_model.val_preprocess,
@@ -138,7 +140,7 @@ def eval_task_addition(args):
             is_train=False,
             args=args,
         )
-        abs_accuracy, _ = eval(args, dataset_name, loader, merged_model)
+        abs_accuracy = eval_acc(args, loader, merged_model)
 
         finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
         classification_head = get_classification_head(args, dataset_name + "Val")
@@ -147,14 +149,62 @@ def eval_task_addition(args):
 
         norm_accuracy = abs_accuracy / abs_accuracy_finetuned if abs_accuracy_finetuned != 0 else 0.0
 
-        results.append({
-            "dataset": dataset_name,
+        merged_results[dataset_name] = {
+            "train": {},
+            "test": {
+            "abs_accuracy": abs_accuracy,
+            "norm_accuracy": norm_accuracy},
+        }
+
+        scaled_acc = eval_acc(args, loader, scaled_model)
+        scaled_results[dataset_name] = {
+            "train": {},
+            "test": {
+                "accuracy": scaled_acc,
+            }
+        }
+
+        dataset = get_dataset(
+                dataset_name+"Val",
+                preprocess=merged_model.val_preprocess,
+                location=args.data_location,
+                batch_size=args.batch_size,
+            )
+        loader = get_dataloader(
+            dataset,
+            is_train=True,
+            args=args,
+        )
+        abs_accuracy = eval(args, dataset_name, loader, merged_model)
+
+        finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
+        classification_head = get_classification_head(args, dataset_name + "Val")
+        finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(args.device)
+        abs_accuracy_finetuned, logdet = eval(dataset_name, loader, finetuned_model)
+
+        norm_accuracy = abs_accuracy / abs_accuracy_finetuned if abs_accuracy_finetuned != 0 else 0.0
+
+        merged_results[dataset_name]["train"] = {
             "abs_accuracy": abs_accuracy,
             "norm_accuracy": norm_accuracy,
-        })
+            "logdet_hF": logdet,
+        }
 
-    avg_absolute_acc = sum(result["abs_accuracy"] for result in results) / len(results)
-    avg_normalized_acc = sum(result["norm_accuracy"] for result in results) / len(results)
+        acc, logdet = eval(args, dataset_name, loader, merged_model)
+        scaled_results[dataset_name]["train"] = {
+            "accuracy": acc,
+            "logdet_hF": logdet,
+        }
+
+
+    with open(os.path.join(args.save, "addition_results.json"), "w") as f:
+        json.dump(merged_results, f, indent=4)
+
+    with open(os.path.join(args.save, "scaled_results.json"), "w") as f:
+        json.dump(scaled_results, f, indent=4)
+
+    avg_absolute_acc = sum(result["abs_accuracy"] for result in merged_results) / len(merged_results)
+    avg_normalized_acc = sum(result["norm_accuracy"] for result in merged_results) / len(merged_results)
 
 
     print(f"Average Absolute Accuracy: {avg_absolute_acc:.2f}")
