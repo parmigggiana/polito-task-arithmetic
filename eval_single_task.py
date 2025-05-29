@@ -24,7 +24,7 @@ def eval(dataset_name, loader, model):
     with torch.no_grad():
         progress_bar = tqdm(loader, desc=f"Evaluating {dataset_name}")
         for images, labels in progress_bar:
-            images, labels = images.to(args.device), labels.to(args.device)
+            images, labels = images.to("cuda"), labels.to("cuda")
 
             # Forward pass
             outputs = model(images)
