@@ -12,11 +12,42 @@ from datasets.registry import get_dataset
 from task_vectors import NonLinearTaskVector
 
 from args import parse_arguments
-from eval_single_task import eval
 
 import numpy as np
 
 datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
+
+def eval_acc(args, dataset_name, loader, model):
+    # Initialize variables for evaluation
+    correct = 0
+    total = 0
+
+    # Start evaluation loop
+    print()
+    with torch.no_grad():
+        progress_bar = tqdm(loader, desc=f"Evaluating {dataset_name}")
+        for images, labels in progress_bar:
+            images, labels = images.to(args.device), labels.to(args.device)
+
+            # Forward pass
+            outputs = model(images)
+
+            # Get predictions
+            _, predicted = torch.max(outputs, 1)
+
+            # Update the count of correct predictions
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+            # Optionally update the progress bar with accuracy
+            accuracy = 100 * correct / total
+            progress_bar.set_postfix({"accuracy": accuracy})
+
+    # Final accuracy
+    accuracy = 100 * correct / total
+
+    return accuracy
+
 
 def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha):
     acc = 0.0
@@ -46,8 +77,8 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             args=args,
         )
 
-        accuracy_c, _ = eval(args, dataset_name, loader, model_cumulative)
-        accuracy_m, _ = eval(args, dataset_name, loader, model_single_task)
+        accuracy_c = eval_acc(args, dataset_name, loader, model_cumulative)
+        accuracy_m = eval_acc(args, dataset_name, loader, model_single_task)
 
         acc += accuracy_c / accuracy_m
 
