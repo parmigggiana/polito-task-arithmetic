@@ -9,7 +9,8 @@ from datasets.common import get_dataloader
 from datasets.registry import get_dataset
 from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
-from utils import torch_load
+from utils import torch_load, train_diag_fim_logtr
+
 samples_nr = 500 
 def eval(args, dataset_name, loader, model):
     # Initialize variables for evaluation
