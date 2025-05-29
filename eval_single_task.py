@@ -14,7 +14,7 @@ from utils import torch_load, train_diag_fim_logtr
 samples_nr = 500  # How many per-example gradients to accumulate
 
 
-def eval(dataset_name, loader, model):
+def eval(args, dataset_name, loader, model):
     # Initialize variables for evaluation
     correct = 0
     total = 0
@@ -24,7 +24,7 @@ def eval(dataset_name, loader, model):
     with torch.no_grad():
         progress_bar = tqdm(loader, desc=f"Evaluating {dataset_name}")
         for images, labels in progress_bar:
-            images, labels = images.to("cuda"), labels.to("cuda")
+            images, labels = images.to(args.device), labels.to(args.device)
 
             # Forward pass
             outputs = model(images)
@@ -78,7 +78,7 @@ def eval_single_task(args, dataset_name, model_path):
         is_train=False,
         args=args,
     )
-    accuracy, logdet_hF = eval(dataset_name, loader, model)
+    accuracy, logdet_hF = eval(args, dataset_name, loader, model)
     print(f"Validation Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
     # Save validation results to JSON
     val_results = {
@@ -99,7 +99,7 @@ def eval_single_task(args, dataset_name, model_path):
         is_train=False,
         args=args,
     )
-    accuracy, logdet_hF = eval(dataset_name, loader, model)
+    accuracy, logdet_hF = eval(args, dataset_name, loader, model)
     print(f"Test Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
     test_results = {
         "dataset": "Test",

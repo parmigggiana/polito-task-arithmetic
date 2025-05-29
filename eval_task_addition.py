@@ -46,8 +46,8 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             args=args,
         )
 
-        accuracy_c = eval(dataset_name, loader, model_cumulative)
-        accuracy_m = eval(dataset_name, loader, model_single_task)
+        accuracy_c = eval(args, dataset_name, loader, model_cumulative)
+        accuracy_m = eval(args, dataset_name, loader, model_single_task)
 
         acc += accuracy_c / accuracy_m
 
@@ -104,7 +104,7 @@ def eval_task_addition(args):
             is_train=False,
             args=args,
         )
-        abs_accuracy, _ = eval(dataset_name, loader, merged_model)
+        abs_accuracy, _ = eval(args, dataset_name, loader, merged_model)
 
         finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
         classification_head = get_classification_head(args, dataset_name + "Val")
