@@ -7,7 +7,7 @@ python finetune.py \
 --save=./out/ \
 --cache-dir=./cache/ \
 --batch-size=32 \
---lr=1e-4 \
+--lr=5e-4 \
 --wd=0.0
 
 python eval_single_task.py \
