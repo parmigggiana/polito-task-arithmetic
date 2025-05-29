@@ -8,14 +8,17 @@ python finetune.py \
 --cache-dir=./cache/ \
 --batch-size=32 \
 --lr=5e-4 \
---wd=0.0
+--wd=0.0 \
+--device="cuda"
 
 python eval_single_task.py \
 --data-location=./data/ \
 --save=./out/ \
 --cache-dir=./cache/ \
+--device="cuda"
 
 python eval_task_addition.py \
 --data-location=./data/ \
 --save=./out/ \
 --cache-dir=./cache/ \
+--device="cuda"
