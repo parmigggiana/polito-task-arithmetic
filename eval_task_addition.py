@@ -1,6 +1,8 @@
 import argparse
 import os
 
+from heads import get_classification_head
+from modeling import ImageClassifier
 import torch
 from torchvision import transforms
 from tqdm import tqdm
@@ -19,8 +21,12 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
     acc = 0.0
     for i in range(len(task_vectors)):
         task_vector = task_vectors[i]
-        model_single_task = task_vector.apply_to(pretrained_model_path, scaling_coef=alpha)
-        model_cumulative = sum(task_vectors[:i + 1]).apply_to(pretrained_model_path, scaling_coef=alpha)
+        encoder_single_task = task_vector.apply_to(pretrained_model_path, scaling_coef=alpha)
+        encoder_cumulative = sum(task_vectors[:i + 1]).apply_to(pretrained_model_path, scaling_coef=alpha)
+
+        classification_head = get_classification_head(args, datasets[i] + "Val")
+        model_single_task = ImageClassifier(encoder_single_task, classification_head).to(args.device)
+        model_cumulative = ImageClassifier(encoder_cumulative, classification_head).to(args.device)
 
         model_single_task.eval()
         model_cumulative.eval()
@@ -99,7 +105,9 @@ def eval_task_addition(args):
         )
         abs_accuracy, _ = eval(dataset_name, loader, merged_model)
 
-        finetuned_model = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
+        finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
+        classification_head = get_classification_head(args, dataset_name + "Val")
+        finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(args.device)
         abs_accuracy_finetuned, _ = eval(dataset_name, loader, finetuned_model)
 
         norm_accuracy = abs_accuracy / abs_accuracy_finetuned if abs_accuracy_finetuned != 0 else 0.0

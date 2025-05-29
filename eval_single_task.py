@@ -56,14 +56,14 @@ def eval_single_task(args, dataset_name, model_path):
         print(f"Results already exist at {results_path}. Skipping evaluation.")
         return
     encoder = ImageEncoder(args=args).to(args.device)
-    head = get_classification_head(args, dataset_name + "Val")
-    model = ImageClassifier(encoder, head).to(args.device)
 
     if model_path is not None:
         print(f"Loading model from {model_path}")
         state_dict = torch_load(model_path, device=args.device).state_dict()
-        model.load_state_dict(state_dict)
+        encoder.load_state_dict(state_dict)
 
+    head = get_classification_head(args, dataset_name + "Val")
+    model = ImageClassifier(encoder, head).to(args.device)
     model.eval()  # Set the model to evaluation mode
 
     # Validation

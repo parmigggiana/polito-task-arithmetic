@@ -35,9 +35,10 @@ def finetune(args, datasets):
     # )
     encoder = ImageEncoder(args).to("cuda")
 
+    ckpt_path = os.path.join(args.save, f"base.pt")
+    encoder.save(ckpt_path)  # Save the base model
     # Fine-tune the model on each dataset and save after each fine-tuning step
     for dataset_name in datasets:
-        ckpt_path = os.path.join(args.save, f"base_{dataset_name}.pt")
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
         if os.path.exists(save_path):
             continue
@@ -47,7 +48,6 @@ def finetune(args, datasets):
         model = ImageClassifier(encoder, head).to(
             "cuda"
         )  # Build full model and move to GPU
-        torch.save(model, ckpt_path)  # Save the base model
 
         model.freeze_head()  # Freeze the classification head
         dataset = get_dataset(
@@ -84,7 +84,8 @@ def finetune(args, datasets):
             print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
 
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
-        torch_save(model, save_path)
+        model.image_encoder.save(save_path)
+        # torch_save(model, save_path)
         torch.cuda.empty_cache()
         # Save the fine-tuned model after each task
 
