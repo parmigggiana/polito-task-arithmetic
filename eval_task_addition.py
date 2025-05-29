@@ -46,8 +46,8 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             args=args,
         )
 
-        accuracy_c = eval(args, dataset_name, loader, model_cumulative)
-        accuracy_m = eval(args, dataset_name, loader, model_single_task)
+        accuracy_c, _ = eval(args, dataset_name, loader, model_cumulative)
+        accuracy_m, _ = eval(args, dataset_name, loader, model_single_task)
 
         acc += accuracy_c / accuracy_m
 
