@@ -11,9 +11,6 @@ from heads import get_classification_head
 from modeling import ImageClassifier
 from task_vectors import NonLinearTaskVector
 
-ALPHA = None
-# ALPHA = 0.05
-
 datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
 
 
@@ -80,10 +77,14 @@ def eval_task_addition(args):
     """
     Evaluates a model with applied task vectors across multiple datasets.
     """
+    addition_path = os.path.join(args.save, "addition_results.json")
+    scaled_path = os.path.join(args.save, "scaled_results.json")
+
+    if os.path.exists(addition_path) and os.path.exists(scaled_path):
+        print("Results already exist. Skipping evaluation.")
+        return
 
     # print("Selected Device: " + args.device)
-    data_location = args.data_location
-    save = args.save
 
     # print(
     #     f"Evaluating task addition model with data from {data_location} and saving to {save}"
@@ -104,13 +105,14 @@ def eval_task_addition(args):
 
         task_vectors.append(task_vector)  # Store the task vector
 
-    if ALPHA is None:
+    if args.alpha is None:
         alpha = find_alpha(
             args, task_vectors=task_vectors, pretrained_model_path=pretrained_model_path
         )
         print(f"Optimal alpha found: {alpha}")
     else:
-        alpha = ALPHA
+        alpha = args.alpha
+        print(f"Using provided alpha: {alpha}")
 
     merged_model = (
         sum(task_vectors)
@@ -210,10 +212,10 @@ def eval_task_addition(args):
             "logdet_hF": logdet,
         }
 
-    with open(os.path.join(args.save, "addition_results.json"), "w") as f:
+    with open(addition_path, "w") as f:
         json.dump(metrics_after_addition, f, indent=4)
 
-    with open(os.path.join(args.save, "scaled_results.json"), "w") as f:
+    with open(scaled_path, "w") as f:
         json.dump(metrics_after_scaling, f, indent=4)
 
     avg_absolute_acc = sum(

@@ -125,6 +125,12 @@ def parse_arguments():
         default=21,
         help="Number of evaluation points used to find optimal coefficient in task arithmetic.",
     )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=None,
+        help="Coefficient for task arithmetic. If not set, it will be found automatically.",
+    )
     parsed_args = parser.parse_args()
     parsed_args.device = "cuda" if torch.cuda.is_available() else "cpu"
 

@@ -64,11 +64,13 @@ def eval_single_task(args, dataset_name, model_path):
 if __name__ == "__main__":
     datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
     args = parse_arguments()
+    print()
+    print()
+
     if os.path.exists(os.path.join(args.save, "before_scaling_results.json")):
         print("Results already exist. Skipping evaluation.")
         exit(0)
-    print()
-    print()
+
     print("Evaluating fine-tuned models")
     metrics_before_scaling = {}
     for dataset in datasets:
