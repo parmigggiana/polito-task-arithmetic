@@ -111,7 +111,7 @@ def eval_task_addition(args):
         alpha = args.alpha
         print(f"Using provided alpha: {alpha}")
 
-    merged_model = (
+    merged_encoder = (
         sum(task_vectors)
         .apply_to(pretrained_model_path, scaling_coef=alpha)
         .to(args.device)
@@ -120,11 +120,24 @@ def eval_task_addition(args):
     metrics_after_addition = {}
     metrics_after_scaling = {}
     for dataset_name in datasets:
-        scaled_model = (
+        scaled_encoder = (
             task_vectors[datasets.index(dataset_name)]
             .apply_to(pretrained_model_path, scaling_coef=alpha)
             .to(args.device)
         )
+
+        classification_head = get_classification_head(
+            args, dataset_name + "Val"
+        )
+        scaled_model = ImageClassifier(
+            scaled_encoder, classification_head
+        ).to(args.device)
+        merged_model = ImageClassifier(
+            merged_encoder, classification_head
+        ).to(args.device)
+
+        scaled_model.eval()
+        merged_model.eval()
 
         dataset = get_dataset(
             dataset_name,
@@ -137,33 +150,25 @@ def eval_task_addition(args):
             is_train=False,
             args=args,
         )
-        abs_accuracy = eval_acc(args, loader, merged_model)
 
-        finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(
-            pretrained_model_path, scaling_coef=alpha
-        )
-        classification_head = get_classification_head(args, dataset_name + "Val")
-        finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(
-            args.device
-        )
-        abs_accuracy_finetuned = eval_acc(args, loader, finetuned_model)
+        acc_merged = eval_acc(args, loader, merged_model)
+        acc_scaled = eval_acc(args, loader, scaled_model)
 
         norm_accuracy = (
-            abs_accuracy / abs_accuracy_finetuned
-            if abs_accuracy_finetuned != 0
+            acc_merged / acc_scaled
+            if acc_scaled != 0
             else 0.0
         )
 
         metrics_after_addition[dataset_name] = {
             "train": {},
-            "test": {"abs_accuracy": abs_accuracy, "norm_accuracy": norm_accuracy},
+            "test": {"abs_accuracy": acc_merged, "norm_accuracy": norm_accuracy},
         }
 
-        scaled_acc = eval_acc(args, loader, scaled_model)
         metrics_after_scaling[dataset_name] = {
             "train": {},
             "test": {
-                "accuracy": scaled_acc,
+                "accuracy": acc_scaled,
             },
         }
 
@@ -178,35 +183,26 @@ def eval_task_addition(args):
             is_train=True,
             args=args,
         )
-        abs_accuracy = eval_acc(args, loader, merged_model)
-
-        finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(
-            pretrained_model_path, scaling_coef=alpha
-        )
-        classification_head = get_classification_head(args, dataset_name + "Val")
-        finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(
-            args.device
-        )
-        abs_accuracy_finetuned, logdet = eval(
-            args, loader, dataset_name, finetuned_model
+        acc_merged, logdet_merged = eval(args, loader, dataset_name, merged_model)
+        acc_scaled, logdet_scaled = eval(
+            args, loader, dataset_name, scaled_model
         )
 
         norm_accuracy = (
-            abs_accuracy / abs_accuracy_finetuned
-            if abs_accuracy_finetuned != 0
+            acc_merged / acc_scaled
+            if acc_scaled != 0
             else 0.0
         )
 
         metrics_after_addition[dataset_name]["train"] = {
-            "abs_accuracy": abs_accuracy,
+            "abs_accuracy": acc_merged,
             "norm_accuracy": norm_accuracy,
-            "logdet_hF": logdet,
+            "logdet_hF": logdet_merged,
         }
 
-        acc, logdet = eval(args, loader, dataset_name, merged_model)
         metrics_after_scaling[dataset_name]["train"] = {
-            "accuracy": acc,
-            "logdet_hF": logdet,
+            "accuracy": acc_scaled,
+            "logdet_hF": logdet_scaled,
         }
 
     with open(addition_path, "w") as f:
