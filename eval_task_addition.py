@@ -145,7 +145,7 @@ def eval_task_addition(args):
         finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(
             args.device
         )
-        abs_accuracy_finetuned, _ = eval(args, loader, dataset_name, finetuned_model)
+        abs_accuracy_finetuned = eval_acc(args, loader, finetuned_model)
 
         norm_accuracy = (
             abs_accuracy / abs_accuracy_finetuned
@@ -177,7 +177,7 @@ def eval_task_addition(args):
             is_train=True,
             args=args,
         )
-        abs_accuracy, _ = eval(args, loader, dataset_name, merged_model)
+        abs_accuracy = eval_acc(args, loader, merged_model)
 
         finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(
             pretrained_model_path, scaling_coef=alpha
