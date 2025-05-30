@@ -39,7 +39,7 @@ def eval(args, loader, dataset_name, model):
             correct += (predicted == labels).sum().item()
 
             # Optionally update the progress bar with accuracy
-            accuracy = 100 * correct / total
+            # accuracy = 100 * correct / total
             # progress_bar.set_postfix({"accuracy": accuracy})
 
     # Final accuracy
@@ -84,28 +84,17 @@ def finetune(args, datasets):
         f"Batch size: {args.batch_size}, Learning rate: {args.lr}, Weight decay: {args.wd}"
     )
 
-    # Define preprocessing transformations
-    # preprocess = transforms.Compose(
-    #     [
-    #         transforms.Resize((224, 224)),  # Ensure consistent size
-    #         transforms.Grayscale(num_output_channels=3),  # Convert grayscale to RGB
-    #         transforms.ToTensor(),  # Convert PIL.Image to tensor
-    #         transforms.Normalize(
-    #             mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
-    #         ),  # Normalize
-    #     ]
-    # )
     encoder = ImageEncoder(args).to("cuda")
 
     ckpt_path = os.path.join(args.save, f"base.pt")
     encoder.save(ckpt_path)  # Save the base model
+
     # Fine-tune the model on each dataset and save after each fine-tuning step
-    training_results = {}
+    pre_trained_metrics = {}
     for dataset_name in datasets:
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
         if os.path.exists(save_path):
             continue
-        print(f"Fine-tuning on dataset: {dataset_name}")
 
         head = get_classification_head(args, dataset_name + "Val")
         model = ImageClassifier(encoder, head).to(
@@ -124,15 +113,30 @@ def finetune(args, datasets):
         # Initialize optimizer and loss function
         optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.wd)
         criterion = nn.CrossEntropyLoss()
-        # base_model = ImageEncoder(args=args)
-        # Training loop
 
+        print(f"Fine-tuning on dataset: {dataset_name}")
+        # Pre-trained model metrics
+        model.eval()
         pre_acc, pre_logdet = eval(args, loader, dataset_name, model)
-        training_results[dataset_name] = {
+        pre_trained_metrics[dataset_name] = {
+            "train": {
+                "accuracy": pre_acc,
+                "logdet_hF": pre_logdet,
+            }
+        }
+        test_dataset = get_dataset(
+            dataset_name,
+            preprocess=model.val_preprocess,
+            location=args.data_location,
+            batch_size=args.batch_size,
+        )
+        test_loader = get_dataloader(test_dataset, is_train=False, args=args)
+        pre_acc = eval_acc(args, test_loader, model)
+        pre_trained_metrics[dataset_name]["test"] = {
             "accuracy": pre_acc,
-            "logdet_hF": pre_logdet,
         }
 
+        # Training loop
         model.train()
         for epoch in range(EPOCHS[dataset_name]):
             running_loss = 0.0
@@ -152,6 +156,8 @@ def finetune(args, datasets):
                 progress_bar.set_postfix(loss=running_loss / (len(progress_bar) + 1))
 
             print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
+
+
 
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
 

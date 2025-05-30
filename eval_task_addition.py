@@ -2,46 +2,21 @@ import os
 
 from heads import get_classification_head
 from modeling import ImageClassifier
-import torch
 
 from datasets.common import get_dataloader
 from datasets.registry import get_dataset
 from task_vectors import NonLinearTaskVector
 
-from args import parse_arguments, argparse
-from eval_single_task import eval
+from args import parse_arguments
 import numpy as np
 import json
 
-ALPHA = 0.05
+from finetune import eval_acc, eval
+
+ALPHA = None
+# ALPHA = 0.05
 
 datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
-
-
-def eval_acc(args, loader, model):
-    # Initialize variables for evaluation
-    correct = 0
-    total = 0
-
-    # Start evaluation loop
-    print()
-    with torch.no_grad():
-        for images, labels in loader:
-            images, labels = images.to(args.device), labels.to(args.device)
-            # Forward pass
-            outputs = model(images)
-
-            # Get predictions
-            _, predicted = torch.max(outputs, 1)
-
-            # Update the count of correct predictions
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-
-    # Final accuracy
-    accuracy = 100 * correct / total
-
-    return accuracy
 
 
 def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha):
@@ -96,7 +71,7 @@ def eval_task_addition(args):
     """
     Evaluates a model with applied task vectors across multiple datasets.
     """
-    
+
     print("Selected Device: " +args.device)
     data_location=args.data_location
     save=args.save
@@ -124,8 +99,8 @@ def eval_task_addition(args):
 
     merged_model = sum(task_vectors).apply_to(pretrained_model_path, scaling_coef=alpha).to(args.device)
 
-    merged_results = {}
-    scaled_results = {}
+    metrics_after_addition = {}
+    metrics_after_scaling = {}
     for dataset_name in datasets:
         scaled_model = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha).to(args.device)
 
@@ -149,7 +124,7 @@ def eval_task_addition(args):
 
         norm_accuracy = abs_accuracy / abs_accuracy_finetuned if abs_accuracy_finetuned != 0 else 0.0
 
-        merged_results[dataset_name] = {
+        metrics_after_addition[dataset_name] = {
             "train": {},
             "test": {
             "abs_accuracy": abs_accuracy,
@@ -157,7 +132,7 @@ def eval_task_addition(args):
         }
 
         scaled_acc = eval_acc(args, loader, scaled_model)
-        scaled_results[dataset_name] = {
+        metrics_after_scaling[dataset_name] = {
             "train": {},
             "test": {
                 "accuracy": scaled_acc,
@@ -184,27 +159,27 @@ def eval_task_addition(args):
 
         norm_accuracy = abs_accuracy / abs_accuracy_finetuned if abs_accuracy_finetuned != 0 else 0.0
 
-        merged_results[dataset_name]["train"] = {
+        metrics_after_addition[dataset_name]["train"] = {
             "abs_accuracy": abs_accuracy,
             "norm_accuracy": norm_accuracy,
             "logdet_hF": logdet,
         }
 
         acc, logdet = eval(args, dataset_name, loader, merged_model)
-        scaled_results[dataset_name]["train"] = {
+        metrics_after_scaling[dataset_name]["train"] = {
             "accuracy": acc,
             "logdet_hF": logdet,
         }
 
 
     with open(os.path.join(args.save, "addition_results.json"), "w") as f:
-        json.dump(merged_results, f, indent=4)
+        json.dump(metrics_after_addition, f, indent=4)
 
     with open(os.path.join(args.save, "scaled_results.json"), "w") as f:
-        json.dump(scaled_results, f, indent=4)
+        json.dump(metrics_after_scaling, f, indent=4)
 
-    avg_absolute_acc = sum(result["abs_accuracy"] for result in merged_results) / len(merged_results)
-    avg_normalized_acc = sum(result["norm_accuracy"] for result in merged_results) / len(merged_results)
+    avg_absolute_acc = sum(result["abs_accuracy"] for result in metrics_after_addition) / len(metrics_after_addition)
+    avg_normalized_acc = sum(result["norm_accuracy"] for result in metrics_after_addition) / len(metrics_after_addition)
 
 
     print(f"Average Absolute Accuracy: {avg_absolute_acc:.2f}")
