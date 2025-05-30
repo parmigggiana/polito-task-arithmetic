@@ -191,7 +191,7 @@ def eval_task_addition(args):
             args.device
         )
         abs_accuracy_finetuned, logdet = eval(
-            args, dataset_name, loader, finetuned_model
+            args, loader, dataset_name, finetuned_model
         )
 
         norm_accuracy = (
