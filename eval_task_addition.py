@@ -8,7 +8,7 @@ from datasets.common import get_dataloader
 from datasets.registry import get_dataset
 from task_vectors import NonLinearTaskVector
 
-from args import parse_arguments
+from args import parse_arguments, argparse
 from eval_single_task import eval
 import numpy as np
 import json
@@ -28,7 +28,6 @@ def eval_acc(args, loader, model):
     with torch.no_grad():
         for images, labels in loader:
             images, labels = images.to(args.device), labels.to(args.device)
-
             # Forward pass
             outputs = model(images)
 
@@ -97,7 +96,8 @@ def eval_task_addition(args):
     """
     Evaluates a model with applied task vectors across multiple datasets.
     """
-
+    
+    print("Selected Device: " +args.device)
     data_location=args.data_location
     save=args.save
 
@@ -122,12 +122,12 @@ def eval_task_addition(args):
     else:
         alpha = ALPHA
 
-    merged_model = sum(task_vectors).apply_to(pretrained_model_path, scaling_coef=alpha)
+    merged_model = sum(task_vectors).apply_to(pretrained_model_path, scaling_coef=alpha).to(args.device)
 
-    merged_results = []
-    scaled_results = []
+    merged_results = {}
+    scaled_results = {}
     for dataset_name in datasets:
-        scaled_model = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
+        scaled_model = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha).to(args.device)
 
         dataset = get_dataset(
                 dataset_name,
@@ -145,7 +145,7 @@ def eval_task_addition(args):
         finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
         classification_head = get_classification_head(args, dataset_name + "Val")
         finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(args.device)
-        abs_accuracy_finetuned, _ = eval(dataset_name, loader, finetuned_model)
+        abs_accuracy_finetuned, _ = eval(args, dataset_name, loader, finetuned_model)
 
         norm_accuracy = abs_accuracy / abs_accuracy_finetuned if abs_accuracy_finetuned != 0 else 0.0
 
@@ -175,12 +175,12 @@ def eval_task_addition(args):
             is_train=True,
             args=args,
         )
-        abs_accuracy = eval(args, dataset_name, loader, merged_model)
+        abs_accuracy, _ = eval(args, dataset_name, loader, merged_model)
 
         finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(pretrained_model_path, scaling_coef=alpha)
         classification_head = get_classification_head(args, dataset_name + "Val")
         finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(args.device)
-        abs_accuracy_finetuned, logdet = eval(dataset_name, loader, finetuned_model)
+        abs_accuracy_finetuned, logdet = eval(args, dataset_name, loader, finetuned_model)
 
         norm_accuracy = abs_accuracy / abs_accuracy_finetuned if abs_accuracy_finetuned != 0 else 0.0
 
