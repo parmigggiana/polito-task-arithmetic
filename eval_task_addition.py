@@ -21,7 +21,9 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
         encoder_single_task = task_vector.apply_to(
             pretrained_model_path, scaling_coef=alpha
         )
-        encoder_cumulative = encoder_single_task.clone()
+        encoder_cumulative = task_vector.apply_to(
+            pretrained_model_path, scaling_coef=alpha
+        )
         for task_vector in task_vectors[:i]:
             encoder_cumulative += task_vector.apply_to(
                 pretrained_model_path, scaling_coef=alpha
