@@ -11,19 +11,11 @@ from utils import torch_load, train_diag_fim_logtr
 
 
 def eval_single_task(args, dataset_name, model_path):
-    results_path = os.path.join(
-        args.save,
-        f"{dataset_name}_{'finetuned' if model_path else 'base'}_results.json",
-    )
-    if os.path.exists(results_path):
-        print(f"Results already exist at {results_path}. Skipping evaluation.")
-        return
+    print()
     encoder = ImageEncoder(args=args).to(args.device)
-
-    if model_path is not None:
-        print(f"Loading model from {model_path}")
-        state_dict = torch_load(model_path, device=args.device).state_dict()
-        encoder.load_state_dict(state_dict)
+    # print(f"Loading model from {model_path}")
+    state_dict = torch_load(model_path, device=args.device).state_dict()
+    encoder.load_state_dict(state_dict)
 
     head = get_classification_head(args, dataset_name + "Val")
     model = ImageClassifier(encoder, head).to(args.device)
@@ -42,7 +34,7 @@ def eval_single_task(args, dataset_name, model_path):
         args=args,
     )
     accuracy, logdet_hF = eval(args, loader, dataset_name, model)
-    print(f"Validation Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
+    print(f"Training Dataset | accuracy: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
     train_results = {
         "accuracy": accuracy,
         "logdet_hF": logdet_hF,
@@ -61,7 +53,7 @@ def eval_single_task(args, dataset_name, model_path):
         args=args,
     )
     accuracy = eval_acc(args, loader, model)
-    print(f"Test Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
+    print(f"Test Dataset | accuracy: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
     test_results = {
         "accuracy": accuracy,
     }
@@ -76,9 +68,6 @@ if __name__ == "__main__":
         print("Results already exist. Skipping evaluation.")
         exit(0)
     print()
-    print("Evaluating pretrained model")
-    for dataset in datasets:
-        eval_single_task(args=args, dataset_name=dataset, model_path=None)
     print()
     print("Evaluating fine-tuned models")
     metrics_before_scaling = {}

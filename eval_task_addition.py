@@ -79,14 +79,16 @@ def eval_task_addition(args):
     Evaluates a model with applied task vectors across multiple datasets.
     """
 
-    print("Selected Device: " + args.device)
+    # print("Selected Device: " + args.device)
     data_location = args.data_location
     save = args.save
 
-    print(
-        f"Evaluating task addition model with data from {data_location} and saving to {save}"
-    )
+    # print(
+    #     f"Evaluating task addition model with data from {data_location} and saving to {save}"
+    # )
 
+    print()
+    print()
     task_vectors = []
 
     for dataset_name in datasets:
