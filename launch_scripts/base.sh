@@ -19,4 +19,3 @@ python eval_task_addition.py \
 --data-location=./data/ \
 --save=./out/ \
 --cache-dir=./cache/ \
---device="cuda"
