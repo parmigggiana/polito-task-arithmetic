@@ -1,11 +1,10 @@
 import json
 import os
 
-from finetune import eval_acc, eval
-
 from args import parse_arguments
 from datasets.common import get_dataloader
 from datasets.registry import get_dataset
+from finetune import eval, eval_acc
 from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
 from utils import torch_load, train_diag_fim_logtr
@@ -96,4 +95,3 @@ if __name__ == "__main__":
 
     with open(os.path.join(args.save, "before_scaling_results.json"), "w") as f:
         json.dump(metrics_before_scaling, f, indent=4)
-

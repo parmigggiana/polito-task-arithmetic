@@ -16,13 +16,13 @@ EPOCHS = {"DTD": 76, "EuroSAT": 12, "GTSRB": 11, "MNIST": 5, "RESISC45": 15, "SV
 
 samples_nr = 200
 
+
 def eval(args, loader, dataset_name, model):
     # Initialize variables for evaluation
     correct = 0
     total = 0
 
     # Start evaluation loop
-    print()
     with torch.no_grad():
         # progress_bar = tqdm(loader, desc=f"Evaluating {dataset_name}")
         for images, labels in loader:
@@ -48,13 +48,13 @@ def eval(args, loader, dataset_name, model):
 
     return accuracy, logdet_hF
 
+
 def eval_acc(args, loader, model):
     # Initialize variables for evaluation
     correct = 0
     total = 0
 
     # Start evaluation loop
-    print()
     with torch.no_grad():
         for images, labels in loader:
             images, labels = images.to(args.device), labels.to(args.device)
@@ -68,7 +68,6 @@ def eval_acc(args, loader, model):
             # Update the count of correct predictions
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-
 
     # Final accuracy
     accuracy = 100 * correct / total
@@ -155,20 +154,16 @@ def finetune(args, datasets):
                 running_loss += loss.item()
                 progress_bar.set_postfix(loss=running_loss / (len(progress_bar) + 1))
 
-            print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
-
-
+            # print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
 
         save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
 
         model.image_encoder.save(save_path)
-        # torch_save(model, save_path)
         torch.cuda.empty_cache()
-        # Save the fine-tuned model after each task
+        print()
 
-        print(f"Model saved for {dataset_name} at {save_path}")
     with open(os.path.join(args.save, "pre_trained_results.json"), "w") as f:
-        json.dump(training_results[dataset_name], f, indent=4)
+        json.dump(pre_trained_metrics, f, indent=4)
 
 
 if __name__ == "__main__":
