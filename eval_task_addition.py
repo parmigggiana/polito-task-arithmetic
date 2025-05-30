@@ -43,13 +43,19 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             location=args.data_location,
             batch_size=args.batch_size,
         )
+
         loader = get_dataloader(
             dataset,
             is_train=False,
             args=args,
         )
-
         accuracy_c = eval_acc(args, loader, model_merged)
+
+        loader = get_dataloader(
+            dataset,
+            is_train=False,
+            args=args,
+        )
         accuracy_m = eval_acc(args, loader, model_single_task)
 
         acc += accuracy_c / accuracy_m
@@ -114,7 +120,6 @@ def eval_task_addition(args):
     merged_encoder = (
         sum(task_vectors)
         .apply_to(pretrained_model_path, scaling_coef=alpha)
-        .to(args.device)
     )
 
     metrics_after_addition = {}
@@ -150,8 +155,13 @@ def eval_task_addition(args):
             is_train=False,
             args=args,
         )
-
         acc_merged = eval_acc(args, loader, merged_model)
+
+        loader = get_dataloader(
+            dataset,
+            is_train=False,
+            args=args,
+        )
         acc_scaled = eval_acc(args, loader, scaled_model)
 
         norm_accuracy = (
@@ -171,6 +181,8 @@ def eval_task_addition(args):
                 "accuracy": acc_scaled,
             },
         }
+        print(
+            f"Dataset: {dataset_name}, Merged Accuracy: {acc_merged:.4f}")
 
         dataset = get_dataset(
             dataset_name + "Val",
@@ -184,6 +196,12 @@ def eval_task_addition(args):
             args=args,
         )
         acc_merged, logdet_merged = eval(args, loader, dataset_name, merged_model)
+
+        loader = get_dataloader(
+            dataset,
+            is_train=True,
+            args=args,
+        )
         acc_scaled, logdet_scaled = eval(
             args, loader, dataset_name, scaled_model
         )
@@ -210,16 +228,6 @@ def eval_task_addition(args):
 
     with open(scaled_path, "w") as f:
         json.dump(metrics_after_scaling, f, indent=4)
-
-    avg_absolute_acc = sum(
-        result["abs_accuracy"] for result in metrics_after_addition
-    ) / len(metrics_after_addition)
-    avg_normalized_acc = sum(
-        result["norm_accuracy"] for result in metrics_after_addition
-    ) / len(metrics_after_addition)
-
-    print(f"Average Absolute Accuracy: {avg_absolute_acc:.2f}")
-    print(f"Average Normalized Accuracy: {avg_normalized_acc:.2f}")
 
 
 def main():
