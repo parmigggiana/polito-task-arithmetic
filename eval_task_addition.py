@@ -24,9 +24,11 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
         encoder_single_task = task_vector.apply_to(
             pretrained_model_path, scaling_coef=alpha
         )
-        encoder_cumulative = sum(task_vectors[: i + 1]).apply_to(
-            pretrained_model_path, scaling_coef=alpha
-        )
+        encoder_cumulative = encoder_single_task.clone()
+        for task_vector in task_vectors[:i]:
+            encoder_cumulative += task_vector.apply_to(
+                pretrained_model_path, scaling_coef=alpha
+            )
 
         classification_head = get_classification_head(args, datasets[i] + "Val")
         model_single_task = ImageClassifier(
