@@ -14,7 +14,7 @@ from utils import train_diag_fim_logtr
 
 EPOCHS = {"DTD": 76, "EuroSAT": 12, "GTSRB": 11, "MNIST": 5, "RESISC45": 15, "SVHN": 4}
 
-samples_nr = 200
+samples_nr = 500
 
 
 def eval(args, loader, dataset_name, model):
