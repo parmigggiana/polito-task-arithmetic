@@ -162,8 +162,9 @@ def finetune(args, datasets):
         torch.cuda.empty_cache()
         print()
 
-    with open(os.path.join(args.save, "pre_trained_results.json"), "w") as f:
-        json.dump(pre_trained_metrics, f, indent=4)
+    if pre_trained_metrics != {}:
+        with open(os.path.join(args.save, "pre_trained_results.json"), "w") as f:
+            json.dump(pre_trained_metrics, f, indent=4)
 
 
 if __name__ == "__main__":
