@@ -16,34 +16,29 @@ datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
 
 def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha):
     acc = 0.0
+    encoder_merged = sum(task_vectors).apply_to(
+        pretrained_model_path, scaling_coef=alpha
+    )
+
     for i in range(len(task_vectors)):
         task_vector = task_vectors[i]
         encoder_single_task = task_vector.apply_to(
             pretrained_model_path, scaling_coef=alpha
         )
-        encoder_cumulative = task_vector.apply_to(
-            pretrained_model_path, scaling_coef=alpha
-        )
-        for task_vector in task_vectors[:i]:
-            encoder_cumulative += task_vector.apply_to(
-                pretrained_model_path, scaling_coef=alpha
-            )
 
         classification_head = get_classification_head(args, datasets[i] + "Val")
         model_single_task = ImageClassifier(
             encoder_single_task, classification_head
         ).to(args.device)
-        model_cumulative = ImageClassifier(encoder_cumulative, classification_head).to(
+        model_merged = ImageClassifier(encoder_merged, classification_head).to(
             args.device
         )
 
         model_single_task.eval()
-        model_cumulative.eval()
+        model_merged.eval()
 
-        acc = 0.0
-        dataset_name = datasets[i]
         dataset = get_dataset(
-            dataset_name + "Val",
+            datasets[i] + "Val",
             preprocess=model_single_task.val_preprocess,
             location=args.data_location,
             batch_size=args.batch_size,
@@ -54,7 +49,7 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             args=args,
         )
 
-        accuracy_c = eval_acc(args, loader, model_cumulative)
+        accuracy_c = eval_acc(args, loader, model_merged)
         accuracy_m = eval_acc(args, loader, model_single_task)
 
         acc += accuracy_c / accuracy_m
@@ -97,9 +92,9 @@ def eval_task_addition(args):
     task_vectors = []
 
     for dataset_name in datasets:
-        print(f"Creating task vector for {dataset_name}...")
-        pretrained_model_path = os.path.join(args.save, f"base.pt")
-        finetuned_model_path = f"./out/finetuned_{dataset_name}.pt"
+        # print(f"Creating task vector for {dataset_name}...")
+        pretrained_model_path = os.path.join(args.save, "base.pt")
+        finetuned_model_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
         task_vector = NonLinearTaskVector(
             pretrained_checkpoint=pretrained_model_path,
             finetuned_checkpoint=finetuned_model_path,

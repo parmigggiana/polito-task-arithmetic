@@ -68,7 +68,7 @@ if __name__ == "__main__":
     print()
 
     if os.path.exists(os.path.join(args.save, "before_scaling_results.json")):
-        print("Results already exist. Skipping evaluation.")
+        print("Finetuned Results already exist. Skipping evaluation.")
         exit(0)
 
     print("Evaluating fine-tuned models")
