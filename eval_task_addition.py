@@ -143,7 +143,7 @@ def eval_task_addition(args):
         finetuned_model = ImageClassifier(finetuned_encoder, classification_head).to(
             args.device
         )
-        abs_accuracy_finetuned, _ = eval(args, dataset_name, loader, finetuned_model)
+        abs_accuracy_finetuned, _ = eval(args, loader, dataset_name, finetuned_model)
 
         norm_accuracy = (
             abs_accuracy / abs_accuracy_finetuned
@@ -175,7 +175,7 @@ def eval_task_addition(args):
             is_train=True,
             args=args,
         )
-        abs_accuracy, _ = eval(args, dataset_name, loader, merged_model)
+        abs_accuracy, _ = eval(args, loader, dataset_name, merged_model)
 
         finetuned_encoder = task_vectors[datasets.index(dataset_name)].apply_to(
             pretrained_model_path, scaling_coef=alpha
@@ -200,7 +200,7 @@ def eval_task_addition(args):
             "logdet_hF": logdet,
         }
 
-        acc, logdet = eval(args, dataset_name, loader, merged_model)
+        acc, logdet = eval(args, loader, dataset_name, merged_model)
         metrics_after_scaling[dataset_name]["train"] = {
             "accuracy": acc,
             "logdet_hF": logdet,

@@ -41,7 +41,7 @@ def eval_single_task(args, dataset_name, model_path):
         is_train=True,
         args=args,
     )
-    accuracy, logdet_hF = eval(args, dataset_name, loader, model)
+    accuracy, logdet_hF = eval(args, loader, dataset_name, model)
     print(f"Validation Dataset: {accuracy:.2f} - logdet_hF: {logdet_hF:.3f}")
     train_results = {
         "accuracy": accuracy,
