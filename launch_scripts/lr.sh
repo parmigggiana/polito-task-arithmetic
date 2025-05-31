@@ -15,7 +15,6 @@ python eval_task_addition.py \
 --data-location=./data/ \
 --save=./out_lr_3/ \
 --cache-dir=./cache/ \
---alpha=0.15
 
 python finetune.py \
 --data-location=./data/ \
@@ -33,7 +32,6 @@ python eval_task_addition.py \
 --data-location=./data/ \
 --save=./out_lr_2/ \
 --cache-dir=./cache/ \
---alpha=0.15
 
 python finetune.py \
 --data-location=./data/ \
@@ -51,4 +49,3 @@ python eval_task_addition.py \
 --data-location=./data/ \
 --save=./out_lr_1/ \
 --cache-dir=./cache/ \
---alpha=0.15
