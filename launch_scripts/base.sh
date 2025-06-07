@@ -13,9 +13,9 @@ python finetune.py \
 python eval_single_task.py \
 --data-location=./data/ \
 --save=./out/ \
---cache-dir=./cache/ \
+--cache-dir=./cache/
 
 python eval_task_addition.py \
 --data-location=./data/ \
 --save=./out/ \
---cache-dir=./cache/ \
+--cache-dir=./cache/
