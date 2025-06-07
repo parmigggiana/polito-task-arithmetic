@@ -23,7 +23,7 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
     for i in range(len(task_vectors)):
         task_vector = task_vectors[i]
         encoder_single_task = task_vector.apply_to(
-            pretrained_model_path, scaling_coef=alpha
+            pretrained_model_path
         )
 
         classification_head = get_classification_head(args, datasets[i] + "Val")
