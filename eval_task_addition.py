@@ -49,18 +49,21 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             is_train=False,
             args=args,
         )
-        accuracy_c = eval_acc(args, loader, model_merged)
+        accuracy_s = eval_acc(args, loader, model_single_task)
 
         loader = get_dataloader(
             dataset,
             is_train=False,
             args=args,
         )
-        accuracy_m = eval_acc(args, loader, model_single_task)
+        accuracy_m = eval_acc(args, loader, model_merged)
 
-        acc += accuracy_c / accuracy_m
+        print(
+            f"Dataset: {datasets[i]}, Single Task Accuracy: {accuracy_s:.4f}, Merged Accuracy: {accuracy_m:.4f}"
+        )
+        acc += accuracy_m / accuracy_s
 
-    return acc / (i + 1)
+    return acc / len(task_vectors)
 
 
 def find_alpha(args, task_vectors, pretrained_model_path):
@@ -124,6 +127,12 @@ def eval_task_addition(args):
 
     metrics_after_addition = {}
     metrics_after_scaling = {}
+
+    # Load finetuned accuracy from eval_single_task results
+    single_task_results_path = os.path.join(args.save, "before_scaling_results.json")
+    with open(single_task_results_path, "r") as f:
+        single_task_results = json.load(f)
+
     for dataset_name in datasets:
         scaled_encoder = (
             task_vectors[datasets.index(dataset_name)]
@@ -164,10 +173,11 @@ def eval_task_addition(args):
         )
         acc_scaled = eval_acc(args, loader, scaled_model)
 
-        norm_accuracy = (
-            acc_merged / acc_scaled
-            if acc_scaled != 0
-            else 0.0
+
+        acc_finetuned = single_task_results[dataset_name]["test"]["accuracy"]
+
+        norm_accuracy = 100 * (
+            acc_merged / acc_finetuned
         )
 
         metrics_after_addition[dataset_name] = {
@@ -206,10 +216,9 @@ def eval_task_addition(args):
             args, loader, dataset_name, scaled_model
         )
 
-        norm_accuracy = (
-            acc_merged / acc_scaled
-            if acc_scaled != 0
-            else 0.0
+        acc_finetuned = single_task_results[dataset_name]["train"]["accuracy"]
+        norm_accuracy = 100 * (
+            acc_merged / acc_finetuned
         )
 
         metrics_after_addition[dataset_name]["train"] = {
