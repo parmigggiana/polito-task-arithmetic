@@ -232,6 +232,9 @@ def eval_task_addition(args):
             "logdet_hF": logdet_scaled,
         }
 
+    metrics_after_addition["alpha"] = alpha
+    metrics_after_scaling["alpha"] = alpha
+
     with open(addition_path, "w") as f:
         json.dump(metrics_after_addition, f, indent=4)
 
