@@ -124,12 +124,92 @@ class FeatureDataset(Dataset):
         return data
 
 
+def _extract_targets(ds):
+    """Return list of integer class labels.
+
+    Supported fast paths:
+    - FeatureDataset (cached numpy array of labels)
+    - Objects exposing .targets or .labels (torchvision datasets)
+    - torch.utils.data.Subset (recursive)
+    Fallback: iterate.
+    """
+    if isinstance(ds, FeatureDataset):
+        labels = ds.data.get("labels")
+        if torch.is_tensor(labels):
+            labels = labels.tolist()
+        return list(labels)
+    if hasattr(ds, "targets"):
+        t = ds.targets
+        if torch.is_tensor(t):
+            t = t.tolist()
+        return list(t)
+    if hasattr(ds, "labels"):
+        t = ds.labels
+        if torch.is_tensor(t):
+            t = t.tolist()
+        return list(t)
+    if hasattr(ds, "dataset") and hasattr(ds, "indices"):
+        base = _extract_targets(ds.dataset)
+        return [base[i] for i in ds.indices]
+    return [
+        (ds[i][1] if isinstance(ds[i], (list, tuple)) else ds[i]["labels"])  # type: ignore[index]
+        for i in range(len(ds))
+    ]
+
+
+def _build_undersampled_subset(ds, seed=None):
+    """Return a torch.utils.data.Subset with equal number of samples per class (no replacement).
+    Chooses min class count, slices each class list, shuffles combined indices.
+    """
+    labels = _extract_targets(ds)
+    rng = random.Random(seed)
+    per_class = {}
+    for idx, y in enumerate(labels):
+        per_class.setdefault(int(y), []).append(idx)
+    # Shuffle each class list
+    for lst in per_class.values():
+        rng.shuffle(lst)
+    counts_before = {c: len(idxs) for c, idxs in per_class.items()}
+    min_count = min(counts_before.values())
+    balanced_indices = []
+    for lst in per_class.values():
+        balanced_indices.extend(lst[:min_count])
+    rng.shuffle(balanced_indices)
+
+    # Compact logging
+    def _fmt_counts(d):
+        items = sorted(d.items(), key=lambda x: x[0])
+        if len(items) <= 12:
+            return "{" + ", ".join(f"{k}:{v}" for k, v in items) + "}"
+        head = ", ".join(f"{k}:{v}" for k, v in items[:5])
+        tail = ", ".join(f"{k}:{v}" for k, v in items[-5:])
+        return "{" + head + ", ... , " + tail + "}"
+
+    print(
+        f"[undersample] classes={len(per_class)} min_count={min_count} "
+        f"orig_total={len(labels)} new_total={len(balanced_indices)}"
+    )
+    print(f"[undersample] orig_counts={_fmt_counts(counts_before)}")
+    print(f"[undersample] new_count_per_class={min_count}")
+
+    return torch.utils.data.Subset(ds, balanced_indices)
+
+
 def get_dataloader(dataset, is_train, args, image_encoder=None):
+    undersample = is_train and getattr(args, "undersample", False)
+    seed = getattr(args, "seed", None)
+
     if image_encoder is not None:
-        feature_dataset = FeatureDataset(is_train, image_encoder, dataset, args.device)
-        dataloader = DataLoader(
-            feature_dataset, batch_size=args.batch_size, shuffle=is_train
-        )
-    else:
-        dataloader = dataset.train_loader if is_train else dataset.test_loader
-    return dataloader
+        base_ds = FeatureDataset(is_train, image_encoder, dataset, args.device)
+        if undersample:
+            base_ds = _build_undersampled_subset(base_ds, seed=seed)
+        return DataLoader(base_ds, batch_size=args.batch_size, shuffle=is_train)
+
+    if not is_train:
+        return dataset.test_loader
+
+    if undersample:
+        balanced_subset = _build_undersampled_subset(dataset.train_dataset, seed=seed)
+        return DataLoader(balanced_subset, batch_size=args.batch_size, shuffle=True)
+
+    return dataset.train_loader
