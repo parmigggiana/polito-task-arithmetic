@@ -25,7 +25,7 @@ class ImageEncoder(torch.nn.Module):
             name,
             pretrained=pretrained,
             cache_dir=args.openclip_cachedir,
-            quick_gelu=True,
+            quick_gelu=False,
         )
 
         self.cache_dir = args.cache_dir

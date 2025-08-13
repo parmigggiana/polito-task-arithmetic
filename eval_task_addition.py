@@ -22,9 +22,7 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
 
     for i in range(len(task_vectors)):
         task_vector = task_vectors[i]
-        encoder_single_task = task_vector.apply_to(
-            pretrained_model_path
-        )
+        encoder_single_task = task_vector.apply_to(pretrained_model_path)
 
         classification_head = get_classification_head(args, datasets[i] + "Val")
         model_single_task = ImageClassifier(
@@ -57,7 +55,7 @@ def average_normalized_accuracy(args, task_vectors, pretrained_model_path, alpha
             args=args,
         )
         accuracy_m = eval_acc(args, loader, model_merged)
-
+        print()
         print(
             f"Dataset: {datasets[i]}, Single Task Accuracy: {accuracy_s:.4f}, Merged Accuracy: {accuracy_m:.4f}"
         )
@@ -120,9 +118,8 @@ def eval_task_addition(args):
         alpha = args.alpha
         print(f"Using provided alpha: {alpha}")
 
-    merged_encoder = (
-        sum(task_vectors)
-        .apply_to(pretrained_model_path, scaling_coef=alpha)
+    merged_encoder = sum(task_vectors).apply_to(
+        pretrained_model_path, scaling_coef=alpha
     )
 
     metrics_after_addition = {}
@@ -140,15 +137,13 @@ def eval_task_addition(args):
             .to(args.device)
         )
 
-        classification_head = get_classification_head(
-            args, dataset_name + "Val"
+        classification_head = get_classification_head(args, dataset_name + "Val")
+        scaled_model = ImageClassifier(scaled_encoder, classification_head).to(
+            args.device
         )
-        scaled_model = ImageClassifier(
-            scaled_encoder, classification_head
-        ).to(args.device)
-        merged_model = ImageClassifier(
-            merged_encoder, classification_head
-        ).to(args.device)
+        merged_model = ImageClassifier(merged_encoder, classification_head).to(
+            args.device
+        )
 
         scaled_model.eval()
         merged_model.eval()
@@ -173,12 +168,9 @@ def eval_task_addition(args):
         )
         acc_scaled = eval_acc(args, loader, scaled_model)
 
-
         acc_finetuned = single_task_results[dataset_name]["test"]["accuracy"]
 
-        norm_accuracy = 100 * (
-            acc_merged / acc_finetuned
-        )
+        norm_accuracy = 100 * (acc_merged / acc_finetuned)
 
         metrics_after_addition[dataset_name] = {
             "train": {},
@@ -191,8 +183,7 @@ def eval_task_addition(args):
                 "accuracy": acc_scaled,
             },
         }
-        print(
-            f"Dataset: {dataset_name}, Merged Accuracy: {acc_merged:.4f}")
+        print(f"Dataset: {dataset_name}, Merged Accuracy: {acc_merged:.4f}")
 
         dataset = get_dataset(
             dataset_name + "Val",
@@ -212,14 +203,10 @@ def eval_task_addition(args):
             is_train=True,
             args=args,
         )
-        acc_scaled, logdet_scaled = eval(
-            args, loader, dataset_name, scaled_model
-        )
+        acc_scaled, logdet_scaled = eval(args, loader, dataset_name, scaled_model)
 
         acc_finetuned = single_task_results[dataset_name]["train"]["accuracy"]
-        norm_accuracy = 100 * (
-            acc_merged / acc_finetuned
-        )
+        norm_accuracy = 100 * (acc_merged / acc_finetuned)
 
         metrics_after_addition[dataset_name]["train"] = {
             "abs_accuracy": acc_merged,
