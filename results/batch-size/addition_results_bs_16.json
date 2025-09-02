@@ -1,0 +1,68 @@
+{
+    "DTD": {
+        "train": {
+            "abs_accuracy": 81.56028368794327,
+            "norm_accuracy": 1.562853907134768,
+            "logdet_hF": 14.228279113769531
+        },
+        "test": {
+            "abs_accuracy": 80.95744680851064,
+            "norm_accuracy": 1.5739400206825231
+        }
+    },
+    "EuroSAT": {
+        "train": {
+            "abs_accuracy": 94.90277777777777,
+            "norm_accuracy": 1.3776209677419355,
+            "logdet_hF": 15.56205940246582
+        },
+        "test": {
+            "abs_accuracy": 93.81481481481481,
+            "norm_accuracy": 1.3632938643702908
+        }
+    },
+    "GTSRB": {
+        "train": {
+            "abs_accuracy": 92.95545545545545,
+            "norm_accuracy": 2.165889212827988,
+            "logdet_hF": 15.263620376586914
+        },
+        "test": {
+            "abs_accuracy": 88.36896278701505,
+            "norm_accuracy": 2.147585145276121
+        }
+    },
+    "MNIST": {
+        "train": {
+            "abs_accuracy": 95.34,
+            "norm_accuracy": 1.423951120162933,
+            "logdet_hF": 14.911890983581543
+        },
+        "test": {
+            "abs_accuracy": 94.9,
+            "norm_accuracy": 1.4176874813265612
+        }
+    },
+    "RESISC45": {
+        "train": {
+            "abs_accuracy": 78.37154614932393,
+            "norm_accuracy": 1.1342635922743132,
+            "logdet_hF": 14.628828048706055
+        },
+        "test": {
+            "abs_accuracy": 76.14285714285714,
+            "norm_accuracy": 1.1109309865678554
+        }
+    },
+    "SVHN": {
+        "train": {
+            "abs_accuracy": 67.40261072124471,
+            "norm_accuracy": 1.4421804959092193,
+            "logdet_hF": 15.323010444641113
+        },
+        "test": {
+            "abs_accuracy": 73.22526121696373,
+            "norm_accuracy": 1.4230683090705485
+        }
+    }
+}
