@@ -60,7 +60,6 @@ def eval_single_task(args, dataset_name, model_path):
 
     return train_results, test_results
 
-
 if __name__ == "__main__":
     datasets = ["DTD", "EuroSAT", "GTSRB", "MNIST", "RESISC45", "SVHN"]
     args = parse_arguments()
