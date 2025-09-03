@@ -1,0 +1,56 @@
+{
+    "DTD": {
+        "train": {
+            "accuracy": 51.635145784081956,
+            "logdet_hF": 14.428238868713379
+        },
+        "test": {
+            "accuracy": 51.38297872340426
+        }
+    },
+    "EuroSAT": {
+        "train": {
+            "accuracy": 61.736111111111114,
+            "logdet_hF": 15.012913703918457
+        },
+        "test": {
+            "accuracy": 62.333333333333336
+        }
+    },
+    "GTSRB": {
+        "train": {
+            "accuracy": 42.48832165498832,
+            "logdet_hF": 15.253192901611328
+        },
+        "test": {
+            "accuracy": 41.298495645288995
+        }
+    },
+    "MNIST": {
+        "train": {
+            "accuracy": 60.82,
+            "logdet_hF": 15.257495880126953
+        },
+        "test": {
+            "accuracy": 60.78
+        }
+    },
+    "RESISC45": {
+        "train": {
+            "accuracy": 66.67842445620224,
+            "logdet_hF": 15.0631685256958
+        },
+        "test": {
+            "accuracy": 66.38095238095238
+        }
+    },
+    "SVHN": {
+        "train": {
+            "accuracy": 43.50616054031089,
+            "logdet_hF": 14.79643726348877
+        },
+        "test": {
+            "accuracy": 48.209895513214505
+        }
+    }
+}

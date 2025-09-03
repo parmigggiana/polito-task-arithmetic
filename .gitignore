@@ -5,3 +5,6 @@ __pycache__/
 .direnv
 .idea
 .vscode
+
+.venv
+.ropeproject

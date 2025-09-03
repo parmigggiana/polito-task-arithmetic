@@ -1,0 +1,15 @@
+Split	Metric	Phase	wd	DTD	EuroSAT	GTSRB	MNIST	RESISC45	SVHN
+Train	Accuracy	Pre-train	0.1	43.68	10.25	7.62	22.84	4.63	15.53
+Train	logdet_hF	Pre-train	0.1	13.97	15.83	15.53	16.08	14.58	14.76
+Test	Accuracy	Pre-train	0.1	44.41	10.59	7.29	22.57	4.63	14.98
+Train	Accuracy	Finetuned	0.1	37.14	99.28	99.65	98.94	93.05	91.52
+Train	logdet_hF	Finetuned	0.1	15.20	15.71	15.71	15.11	15.48	15.57
+Test	Accuracy	Finetuned	0.1	37.66	97.93	95.15	98.73	82.24	91.53
+Train	Accuracy	Scaled	0.1	49.70	62.94	37.93	59.55	59.26	41.19
+Train	logdet_hF	Scaled	0.1	15.04	14.87	14.72	14.44	14.16	13.71
+Test	Accuracy	Scaled	0.1	48.30	63.52	37.48	59.37	59.84	45.65
+Train	Abs Accuracy	Merged	0.1	17.02	76.50	39.15	71.54	37.28	45.96
+Train	Norm Accuracy	Merged	0.1	0.34	1.22	1.03	1.20	0.63	1.12
+Train	logdet_hF	Merged	0.1	14.47	15.72	15.45	15.19	15.17	14.83
+Test	Abs Accuracy	Merged	0.1	16.91	75.44	37.47	71.91	36.89	50.28
+Test	Norm Accuracy	Merged	0.1	0.35	1.19	1.00	1.21	0.62	1.10

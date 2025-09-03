@@ -1,3 +1,9 @@
+"""
+This version of the finetune.py is dedicated to only calculation of the stopping criteria experiment.
+For other experiments we could only change a paramater but for this one we need to change the code and calculate the accuracy and the logdet_hF for each epoch
+and select the snapshot with a specific criteria like maximum accuracy. 
+"""
+
 import json
 import os
 
@@ -11,6 +17,7 @@ from datasets.registry import get_dataset
 from heads import get_classification_head
 from modeling import ImageClassifier, ImageEncoder
 from utils import train_diag_fim_logtr
+import copy
 
 EPOCHS = {"DTD": 76, "EuroSAT": 12, "GTSRB": 11, "MNIST": 5, "RESISC45": 15, "SVHN": 4}
 
@@ -91,9 +98,8 @@ def finetune(args, datasets):
     # Fine-tune the model on each dataset and save after each fine-tuning step
     pre_trained_metrics = {}
     for dataset_name in datasets:
-        save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
-        if os.path.exists(save_path):
-            continue
+        logdet_ckpt_path = os.path.join(args.save, f"finetuned_{dataset_name}_best_logdet.pt")
+        acc_ckpt_path = os.path.join(args.save, f"finetuned_{dataset_name}_best_acc.pt")
 
         head = get_classification_head(args, dataset_name + "Val")
         model = ImageClassifier(encoder, head).to(
@@ -137,6 +143,13 @@ def finetune(args, datasets):
 
         # Training loop
         model.train()
+
+        # Initialize the stopping criteria variables
+        best_model_logdet = None
+        best_logdet = float("-inf")
+        
+        best_model_acc = None
+        best_val_acc = float("-inf")
         for epoch in range(EPOCHS[dataset_name]):
             running_loss = 0.0
             progress_bar = tqdm(loader, desc=f"Epoch {epoch + 1}")
@@ -155,12 +168,28 @@ def finetune(args, datasets):
                 progress_bar.set_postfix(loss=running_loss / (len(progress_bar) + 1))
 
             # print(f"Epoch {epoch + 1}, Loss: {running_loss / len(loader)}")
+          
+            # Get the accuracy and logdet on this epoch and take a snapshot of the model if it is maximum by now
+            val_loader = get_dataloader(dataset, is_train=False, args=args)
+            val_acc, val_logdet = eval(args, val_loader, dataset_name, model)
+            print(f"VAL Acc: {val_acc}, Val logdet: {val_logdet}")
+            # Track best by logdet
+            if val_logdet > best_logdet:
+                best_logdet = val_logdet
+                best_model_logdet = copy.deepcopy(model)
+            
+            # Track best by validation accuracy
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                best_model_acc = copy.deepcopy(model)
 
-        save_path = os.path.join(args.save, f"finetuned_{dataset_name}.pt")
+        best_model_acc.image_encoder.save(acc_ckpt_path)
+        best_model_logdet.image_encoder.save(logdet_ckpt_path)
+        
+        print(f"Saved best model (logdet) to {logdet_ckpt_path}")
+        print(f"Saved best model (val acc) to {acc_ckpt_path}")
 
-        model.image_encoder.save(save_path)
         torch.cuda.empty_cache()
-        print()
 
     if pre_trained_metrics != {}:
         with open(os.path.join(args.save, "pre_trained_results.json"), "w") as f:
